@@ -44,6 +44,9 @@ Caddy is an organiser and early-warning system. It never applies, books, switche
 | D17 | Design process | **Clickable HTML prototype first**, then code. Prototype: `docs/design/prototype.html` | Cheap to change; you test it on your phone before any app code. |
 | D18 | Timeline | **2-day sprint** using parallel Claude Code cloud sessions (§9) | User requirement. 2-week usage gates become post-launch reviews. |
 | D19 | Build cost | **All build work in Claude Code cloud sessions**; no separate API key; no runtime AI | User requirement. |
+| D20 | Environments | **One Supabase project (prod)**, no staging. Vercel previews use the same project; only merges to `main` change the schema (via GitHub Actions). | User choice: halves setup for a two-person app. Tests run against a local Postgres in CI, never the real database. |
+| D21 | Service worker | **Hand-written `public/sw.js`** (offline page + hashed static assets only) instead of Serwist | Next.js 16's PWA guide uses a plain worker; avoids a plugin tied to the bundler. Push handlers are added to the same file in PR-3. |
+| D22 | Dev network | Cloud environment has **full network access**; it holds only public values (Supabase URL, publishable key) | User choice. Secrets live only in Vercel and GitHub Actions. |
 
 ---
 
@@ -55,7 +58,7 @@ Caddy is an organiser and early-warning system. It never applies, books, switche
 | Optional AI extraction/summaries | No AI in the app. OCR + rules only. | D12 |
 | `last30day` skill invoked by the app | App exposes a research contract; an external agent (Claude Code Routine / Gemini) fills it | D13. A coding-agent skill can't run inside Vercel. |
 | Live flight/hotel/car provider adapters, weekly automated discovery | Manual candidates + deep links + total-cost engine; weekly *reminder* for saved trip windows | D6 |
-| Supabase local via Docker as the main dev loop | Hosted **staging** Supabase project for dev/previews. Local Supabase only in CI. | Cloud dev containers can't reliably pull all Supabase images. CI runners can. |
+| Supabase local via Docker as the main dev loop | One hosted Supabase project; migrations and RLS tests run against a throwaway local Postgres in CI | D20. Cloud dev containers can't reliably pull all Supabase images. CI runners can. |
 | Vercel Cron / pg_cron | GitHub Actions cron | D14 |
 | Utility tariff source adapters | **Manual offer entry** (you paste rates from bonkers.ie / switcher.ie) + deterministic calculator | No public Irish tariff API. Scraping comparison sites breaches their terms. |
 | ~60 tables up front | Tables added per release (§6) | Avoid building plumbing nobody uses yet. |
@@ -79,7 +82,7 @@ Pin exact versions at scaffold time (latest stable that's at least 2 weeks old).
 | DB client | `@supabase/ssr` + `supabase-js` | Service-role key only in GitHub Actions secrets and server-only code. |
 | Auth | Supabase Auth, email OTP code | Invite-only: sign-ups disabled; second adult invited from Settings. |
 | Files | Supabase Storage, private bucket, short-lived signed URLs | SHA-256 dedupe. |
-| PWA | Serwist (`@serwist/next`) | Caches the app shell only. No private data in Cache Storage. |
+| PWA | Next.js manifest route + hand-written `public/sw.js` (D21) | Caches the offline page and hashed static assets only. No private data in Cache Storage. |
 | Push | Web Push (VAPID) via `web-push` | Subscriptions stored per device. |
 | Email | Resend (free tier) | Digest only when something changed. Check current free-tier limits at setup. |
 | Maps | MapLibre GL JS + OpenFreeMap tiles | Free, no API key. |
@@ -93,7 +96,7 @@ Pin exact versions at scaffold time (latest stable that's at least 2 weeks old).
 | Tests | Vitest, Testing Library, Playwright (e2e), pytest (worker), pgTAP / SQL tests for RLS | |
 | Quality | ESLint, Prettier, `tsc --noEmit`, Ruff for Python | |
 | CI | GitHub Actions | Lint, typecheck, unit, build, migration + RLS tests on `supabase start`, worker tests. |
-| Hosting | Vercel Hobby (personal, non-commercial use) + Supabase Free ×2 (staging, prod) | Baseline **€0/month**. Optional: domain (~€15/yr), Google Places (likely within free allowance). |
+| Hosting | Vercel Hobby (personal, non-commercial use) + Supabase Free ×1 (D20) | Baseline **€0/month**. Optional: domain (~€15/yr), Google Places (likely within free allowance). |
 
 ### Known platform gotchas (designed around)
 
@@ -245,7 +248,7 @@ All tables: UUID PK, `household_id` (indexed, RLS-scoped), `created_at`/`updated
 
 ### 7.6 Operations (all releases)
 
-- `backup-nightly`: `pg_dump` + storage object list → encrypted with `age` → GitHub artifact (90 days). A **monthly restore test** into staging runs as a scheduled workflow.
+- `backup-nightly`: `pg_dump` + storage object list → encrypted with `age` → GitHub artifact (90 days). A **monthly restore test** into a throwaway Postgres container in GitHub Actions proves the backup is usable.
 - Settings → Data: export everything (JSON + CSV + original files zip) and delete account/household.
 - Settings → Jobs: last run per job, failures and source status.
 
@@ -331,7 +334,7 @@ The original 42-PR, 3–4 month plan is replaced by **~14 larger PRs**. Modules 
 ### 9.1 Prerequisites (you, before Day 1 build starts)
 
 1. **GitHub:** set `main` as the default branch (repo → Settings → General → Default branch).
-2. **Supabase:** create an account and **two projects**: `caddy-staging` and `caddy-prod` (region: West EU / Ireland). Create a **personal access token** (Account → Access Tokens).
+2. **Supabase:** one project, `caddy-prod` (region: West EU / Ireland). No access token is needed (D20). ✅ Done.
 3. **Vercel:** sign in with GitHub and import `saajunaid/caddy` (framework: Next.js). Don't add env vars yet; the scaffold PR lists them.
 4. **Cloud environment:** add the extra domains and variables listed in §10.
 5. **Optional, Day 2:** Resend account + API key (email digest); Google Cloud key for Places (halal coverage).
@@ -340,7 +343,7 @@ The original 42-PR, 3–4 month plan is replaced by **~14 larger PRs**. Modules 
 
 | Block | PR | Contents (plan task IDs) | Runs |
 |---|---|---|---|
-| A | **PR-1 Foundation** | Next.js scaffold, Tailwind + Dracula/Alucard tokens from the prototype, app shell (sidebar/bottom nav), PWA (Serwist, manifest, icons, offline banner), lint/typecheck/test/CI, SessionStart hook (0.3, 0.4) | This session |
+| A | **PR-1 Foundation** | Next.js scaffold, Tailwind + Dracula/Alucard tokens from the prototype, app shell (sidebar/bottom nav), PWA (manifest, icons, service worker, offline banner), lint/typecheck/test/CI, SessionStart hook (0.3, 0.4) | This session |
 | A | **PR-2 Data + auth** | Supabase migrations (core tables), RLS + RLS tests, email OTP login, invite second adult, audit events, generated types (0.5, 0.6) | This session |
 | A | **PR-3 Jobs + alerts + deploy** | `job_runs` ledger, job runner, GitHub Actions templates, ingest endpoint auth, in-app inbox, Web Push, Vercel prod deploy, nightly encrypted backup (0.7, 0.8, 0.9) | This session |
 | B | **PR-4 Housing engine** | newstarterhomes.ie fixtures, parser, matching, observations/change detection, `housing-daily` workflow, sanity guard, notifications (1.1–1.4) | Parallel session 1 |
@@ -362,7 +365,7 @@ The original 42-PR, 3–4 month plan is replaced by **~14 larger PRs**. Modules 
 | D | **PR-13 Hardening** | Security review (RLS, secrets in bundle, signed URLs), export/delete, restore test, Settings → Jobs | This session |
 | D | **PR-14 Docs** | README setup, runbooks, `docs/integrations/*` | This session |
 
-**Day 2 exit:** every module usable on prod, CI green, a backup restored into staging, and a checklist handed to you for phone testing and the first week of monitoring.
+**Day 2 exit:** every module usable on prod, CI green, a backup restored into a throwaway database, and a checklist handed to you for phone testing and the first week of monitoring.
 
 ### 9.4 Keeping parallel sessions from colliding
 
@@ -394,14 +397,22 @@ The original 42-PR, 3–4 month plan is replaced by **~14 larger PRs**. Modules 
    www.ecb.europa.eu
    tiles.openfreemap.org
    ```
-   **Environment variables** (staging only; prod secrets live only in Vercel and GitHub):
+   The environment currently has **Full** network access (D22), so this list is only needed if you switch back to Custom.
+
+   **Environment variables** (public values only; secrets live only in Vercel and GitHub):
    ```text
-   SUPABASE_ACCESS_TOKEN=<personal access token>
-   SUPABASE_STAGING_PROJECT_REF=<staging project ref>
-   NEXT_PUBLIC_SUPABASE_URL=https://<staging-ref>.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=<staging anon/publishable key>
+   NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+   SUPABASE_PROJECT_REF=<project-ref>
    ```
-   Anyone using this environment can read its variables. It's your personal environment, so that's only you, but never put **prod** keys here.
+   **Where each secret lives**
+
+   | Secret | GitHub Actions secret name | Vercel variable (Production + Preview) |
+   |---|---|---|
+   | Project URL | `SUPABASE_PROD_URL` | `NEXT_PUBLIC_SUPABASE_URL` |
+   | Publishable key | (not needed) | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` |
+   | Secret key | `SUPABASE_PROD_SECRET_KEY` | `SUPABASE_SECRET_KEY` (Sensitive) |
+   | Database URL (Session pooler) | `SUPABASE_PROD_DB_URL` | (not needed) |
 6. **Parallel sessions** follow §9.4. This session coordinates: it starts them, reviews their PRs and merges in order.
 
 ---

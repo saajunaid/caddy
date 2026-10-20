@@ -2,6 +2,12 @@
 
 Caddy is a private household PWA (Irish household, two adults). Read `docs/PLAN.md` before starting any task; it overrides `SPEC.md` where they differ.
 
+@AGENTS.md
+
+## Commands
+- `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm format:check`, `pnpm build`. Run all of them before pushing (`pnpm check` runs the first four).
+- Pin exact dependency versions, at least two weeks old.
+
 ## Working style
 - One task (plan ID, e.g. `1.4`) per session and per draft PR. Don't start the next task or release.
 - Before pushing: run lint, typecheck, unit tests and build (and `pytest`/`ruff` for `worker/` changes). Push only when clean.
