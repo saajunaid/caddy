@@ -1,0 +1,416 @@
+# Caddy — Product & Delivery Plan
+
+**Status:** Agreed plan, v1.0 (20 Oct 2026)
+**Source spec:** [`SPEC.md`](../SPEC.md) — the original "Personal Life Hub" blueprint. Where this plan and the spec disagree, **this plan wins** (see [§3 Deviations](#3-deviations-from-specmd)).
+**Hosting:** Vercel (app) + Supabase (database, auth, files) + GitHub Actions (scheduled jobs and workers)
+**Built with:** Claude Code cloud sessions, one PR per task
+
+---
+
+## 1. What Caddy is
+
+A private PWA for one household (two adults) that you open every morning. It answers:
+
+1. **Is there a new Cost Rental home we should apply for, and what's around it?**
+2. **Which bills need reviewing, and what's our Work From Home tax evidence for this year?**
+3. **Which utility contract is about to end, and is switching worth it?**
+4. **What's on for the family this week?**
+5. **What would that holiday actually cost all-in?**
+
+Caddy is an organiser and early-warning system. It never applies, books, switches or files anything for you.
+
+---
+
+## 2. Decisions log (from the planning session)
+
+| # | Topic | Decision | Why |
+|---|-------|----------|-----|
+| D1 | Name | **Caddy** | Matches repo; short home-screen label. |
+| D2 | Scope | All modules eventually: Housing, Bills/Tax, Utilities, Family (incl. education), Travel | User choice. Controlled by strict release gates (§9). |
+| D3 | Release order | **Housing → Bills/Tax → Utilities → Family → Travel** | Housing deadlines are time-critical, so it pays off first. Bills/Tax builds the document pipeline that Utilities reuses. |
+| D4 | Users | **Two adults, separate logins**, one shared household | Same effort as a shared password; gives an audit trail. |
+| D5 | Login method | **Email one-time code (OTP)**, not magic links | In iOS installed PWAs, magic links open in Safari, not the PWA, so you'd end up logged in to the wrong place. Codes work everywhere. |
+| D6 | Travel | **Manual trip planner + deep links.** No live price search. | Amadeus self-service APIs shut down 17 Jul 2026; there's no free combined flight+hotel+board API. |
+| D7 | Family organiser | **Full in-app organiser** (tasks, events, chores, lists, weekly view, education planner) + **iCal feed** out to Apple/Google + **"Share to WhatsApp"** buttons | Household currently uses a mix of Apple, Google and WhatsApp. One-way iCal avoids the Google OAuth trap (Testing-mode refresh tokens expire every 7 days). |
+| D8 | Alerts | **In-app (primary) + Web Push + email digest** | Daily PWA use. iPhone push needs the app installed to Home Screen (iOS 16.4+). |
+| D9 | Housing source | `https://newstarterhomes.ie/rent/` + each `/rent/<slug>/` page | Confirmed real via search index. You'll add the domain to the Claude Code environment's allowed list. |
+| D10 | Neighbourhood | ECCE/childcare, primary, secondary, universities/colleges, bus stops, **halal restaurants, mosques** per listing | User requirement. |
+| D11 | Halal data | **OpenStreetMap + your own curation**, plus an **optional Google Places adapter** (off until a key is added) | OSM halal tagging is patchy. Places fills the gaps but needs a billing card. |
+| D12 | AI at runtime | **None.** Open-source PDF text extraction + OCR + per-supplier parsers | User choice. Also removes a cost and privacy dependency. |
+| D13 | Housing news ("last 30 days") | **Agent-agnostic research contract.** Runs as a daily Claude Code Routine now; swappable to Gemini later | The app owns the prompt + JSON schema + ingest endpoint. Agents are interchangeable runners. |
+| D14 | Job runner | **GitHub Actions cron** | Free minutes, long timeouts, can run Python/OCR and a headless browser, visible logs. Vercel Hobby cron is once a day with ±59 min jitter. |
+| D15 | Visual direction | **Calm & clean, dense where it pays**, **Dracula (dark) / Alucard (light)** | Neon accents work as signals on a calm base. Desktop gets tables where scanning matters. |
+| D16 | Devices | **Phone and desktop equally** | Bottom nav on phone, sidebar on desktop. Every screen is designed at both widths. |
+| D17 | Design process | **Clickable HTML prototype first**, then code | Cheap to change; you test it on your phone before any app code. |
+
+---
+
+## 3. Deviations from SPEC.md
+
+| SPEC says | Caddy does | Reason |
+|-----------|-----------|--------|
+| One shared household account | Two personal logins, one household | D4 |
+| Optional AI extraction/summaries | No AI in the app. OCR + rules only. | D12 |
+| `last30day` skill invoked by the app | App exposes a research contract; an external agent (Claude Code Routine / Gemini) fills it | D13. A coding-agent skill can't run inside Vercel. |
+| Live flight/hotel/car provider adapters, weekly automated discovery | Manual candidates + deep links + total-cost engine; weekly *reminder* for saved trip windows | D6 |
+| Supabase local via Docker as the main dev loop | Hosted **staging** Supabase project for dev/previews. Local Supabase only in CI. | Cloud dev containers can't reliably pull all Supabase images. CI runners can. |
+| Vercel Cron / pg_cron | GitHub Actions cron | D14 |
+| Utility tariff source adapters | **Manual offer entry** (you paste rates from bonkers.ie / switcher.ie) + deterministic calculator | No public Irish tariff API. Scraping comparison sites breaches their terms. |
+| ~60 tables up front | Tables added per release (§6) | Avoid building plumbing nobody uses yet. |
+| Research hub, decisions, finance modules | Deferred to after R5 | Not on the critical path for daily use. |
+
+Everything else in SPEC.md still holds. In particular: no invented facts, failure ≠ zero results, users' application data is never overwritten, money in exact decimals, private files only, versioned tax rules with sources, and human approval for anything consequential.
+
+---
+
+## 4. Tech stack
+
+Pin exact versions at scaffold time (latest stable that's at least 2 weeks old).
+
+| Layer | Choice | Notes |
+|-------|--------|-------|
+| Language | TypeScript (strict) for app; Python 3.12 for the document worker | |
+| Framework | Next.js (App Router), React | Server Components + Server Actions for mutations; route handlers for job/ingest endpoints. |
+| UI | Tailwind CSS v4 + shadcn/ui (Radix primitives) + lucide icons | Themed via CSS variables (§8.3). |
+| Forms | React Hook Form + Zod | Zod schemas shared between client, server and job payloads. |
+| DB | Supabase Postgres | SQL migrations in `supabase/migrations`, generated TS types. RLS on every table. |
+| DB client | `@supabase/ssr` + `supabase-js` | Service-role key only in GitHub Actions secrets and server-only code. |
+| Auth | Supabase Auth, email OTP code | Invite-only: sign-ups disabled; second adult invited from Settings. |
+| Files | Supabase Storage, private bucket, short-lived signed URLs | SHA-256 dedupe. |
+| PWA | Serwist (`@serwist/next`) | Caches the app shell only. No private data in Cache Storage. |
+| Push | Web Push (VAPID) via `web-push` | Subscriptions stored per device. |
+| Email | Resend (free tier) | Digest only when something changed. Check current free-tier limits at setup. |
+| Maps | MapLibre GL JS + OpenFreeMap tiles | Free, no API key. |
+| Geocoding | Nominatim (OSM) from the worker, cached, 1 req/s, proper User-Agent | Runs once per new listing. |
+| Amenities | Overpass API (OSM): schools, kindergartens/childcare, universities/colleges, bus stops, mosques (`amenity=place_of_worship` + `religion=muslim`), halal (`diet:halal`, `cuisine=*halal*`) | Plus official lists where available: Dept of Education school lists (data.gov.ie), Tusla early-years register, TFI/NTA GTFS stops. Verify formats in R1. |
+| Optional | Google Places adapter for halal restaurants | Off by default. Respect Places caching terms (store place IDs; refresh other fields within allowed window). |
+| Distances | Straight-line + walking estimate (labelled "estimate") | Proper routing (openrouteservice) is a later add-on. |
+| Scraping | Node + `undici` + `cheerio`; Playwright only if a page needs JS | Polite: 1 request/sec, identifies itself, respects robots.txt. |
+| Document worker | Python: `pypdf`/`pdfplumber` (text layer) → Tesseract or Docling OCR (images/scans) → per-supplier parsers → proposed fields | Avoid AGPL libraries (e.g. PyMuPDF) to keep licensing simple. |
+| Currency (travel) | ECB daily reference rates | Free, official, dated. |
+| Tests | Vitest, Testing Library, Playwright (e2e), pytest (worker), pgTAP / SQL tests for RLS | |
+| Quality | ESLint, Prettier, `tsc --noEmit`, Ruff for Python | |
+| CI | GitHub Actions | Lint, typecheck, unit, build, migration + RLS tests on `supabase start`, worker tests. |
+| Hosting | Vercel Hobby (personal, non-commercial use) + Supabase Free ×2 (staging, prod) | Baseline **€0/month**. Optional: domain (~€15/yr), Google Places (likely within free allowance). |
+
+### Known platform gotchas (designed around)
+
+- **Supabase Free pauses after 7 days idle.** The daily housing job keeps prod awake. Staging may pause; that's fine.
+- **Supabase Free has no backups we can rely on.** A nightly `pg_dump` and a storage manifest go to an encrypted GitHub Actions artifact (90-day retention), with a monthly restore test (§7.6).
+- **GitHub cron runs in UTC and can be delayed.** Jobs compute the Europe/Dublin date themselves and use it as the idempotency key, so a delayed or doubled run is harmless.
+- **iOS PWA:** push only after Add to Home Screen; OTP login (D5); test installs on both iOS Safari and Android Chrome.
+
+---
+
+## 5. Architecture
+
+```text
+ Phone / desktop (installed PWA)
+        │  HTTPS
+        ▼
+ ┌──────────────────────── Vercel ─────────────────────────┐
+ │ Next.js app                                              │
+ │  • UI (RSC)          • Server Actions (mutations)        │
+ │  • /api/ingest/*     (bearer-token, for jobs & agents)   │
+ │  • /api/ical/<token> (private calendar feed)             │
+ │  • src/server/domain (pure TS: money, dates, matching,   │
+ │    tax rules, cost engines — no I/O, fully unit-tested)  │
+ └───────────────┬──────────────────────────────────────────┘
+                 │ supabase-js (user session, RLS)
+                 ▼
+ ┌──────────────────────── Supabase ───────────────────────┐
+ │ Postgres (+RLS)   Auth (email OTP)   Storage (private)  │
+ └───────────────▲──────────────────────────────────────────┘
+                 │ service role (secrets in GitHub only)
+ ┌───────────────┴──────── GitHub Actions ─────────────────┐
+ │ housing-daily     06:15 UTC  crawl → diff → notify      │
+ │ amenities         after housing-daily, new listings only│
+ │ documents         on upload (repository_dispatch) + 6h  │
+ │                   sweep; Python OCR + parsers           │
+ │ reminders-daily   contract T-14, deadlines, digests,    │
+ │                   web push, email                       │
+ │ backup-nightly    pg_dump + storage manifest, encrypted │
+ │ ci                PR checks                             │
+ └──────────────────────────────────────────────────────────┘
+
+ ┌──────── Research agents (swappable) ────────┐
+ │ Claude Code Routine (daily)  ── or ──  Gemini│
+ │ reads research/prompts/*.md, outputs JSON    │
+ │ matching research/schema/*.json, POSTs to    │
+ │ /api/ingest/research                          │
+ └──────────────────────────────────────────────┘
+```
+
+**Rules of the architecture**
+
+1. **Modular monolith.** One Next.js app, with modules under `src/modules/<name>`. Domain logic lives in `src/server/domain` and has no I/O.
+2. **Jobs share code with the app.** Job scripts in `scripts/jobs/*.ts` import the same domain services. The Python worker is the only other codebase, and it only proposes document fields.
+3. **Job ledger.** Every run writes a `job_runs` row: idempotency key, status (`queued|running|succeeded|partial|failed`), per-source checks, counts, error. The UI shows "Last checked 07:14 · OK" or "Failed: source unreachable" on every monitored item.
+4. **Provenance on every fact.** Values carry a `source_kind` from: `official | provider | osm | google | estimate | user | ocr-proposed`. The UI renders it as a small tag.
+5. **User-owned fields are never written by jobs.** These include application status, outcomes, notes and confirmed document fields. This is enforced in code and covered by tests.
+
+### 5.1 Research contract (agent-agnostic, D13)
+
+```text
+research/
+  prompts/housing-news.md        # task: last-30-day Irish Cost Rental news, Limerick priority
+  schema/research-result.json    # JSON Schema (generated from the Zod ResearchResult in SPEC §5.3)
+  README.md                      # how to run with Claude Code Routine / Gemini CLI / by hand
+```
+
+- Endpoint: `POST /api/ingest/research`, `Authorization: Bearer $RESEARCH_INGEST_TOKEN`. It validates with Zod, dedupes by URL and content hash, and stores items as `reported` or `unverified`. Nothing becomes "confirmed" without an official-source URL.
+- **Claude Code Routine:** a daily routine that starts a fresh cloud session in this repo, runs the prompt, validates the output against the schema, and POSTs it. The cloud environment needs the app domain and news/official domains allowed.
+- **Gemini swap:** the same prompt and schema run via Gemini CLI, e.g. in a GitHub Action. Verify the auth model at swap time: CI usage typically needs a Gemini API key rather than a consumer subscription login.
+- If no run arrives for 36h, the Housing page shows "News: no update since …". Silence is never shown as "no news".
+
+---
+
+## 6. Data model (added per release)
+
+All tables: UUID PK, `household_id` (indexed, RLS-scoped), `created_at`/`updated_at`, money as `numeric(12,2)` + `currency char(3)`, timestamps `timestamptz` (UTC), dates as `date` where only a date is meant.
+
+**R0 – Core:** `households`, `household_members` (people incl. kids, no login), `user_profiles` (auth users → household), `notifications`, `push_subscriptions`, `audit_events`, `job_runs`, `job_source_checks`, `household_preferences`.
+
+**R1 – Housing:** `housing_listings`, `housing_observations` (snapshot + hash + change summary), `housing_applications` (user-owned), `housing_projects` (pipeline, `cost_rental_confirmed: yes|no|unconfirmed`), `places` (geocoded listings + amenities, provenance), `listing_places` (listing ↔ place, category, distance_m, walk_min_estimate), `curated_places` (your halal/other additions), `research_items`, `research_sources`.
+
+**R2 – Bills & tax:** `documents` (storage path, sha256, mime, status), `document_extractions` (extractor, version, proposed JSON, confidence), `document_links` (document ↔ any entity + purpose), `expenses`, `tax_years`, `tax_rules` (jurisdiction, year, version, rule JSON, Revenue URL, reviewed_at), `tax_evidence_items`, `wfh_days` (per person per month).
+
+**R3 – Utilities:** `utility_contracts` (end date, `comparison_due_on` generated = end − 14 days), `utility_bills` (→ document), `usage_profiles` (derived from bills), `tariff_offers` (manually entered, source URL, checked date), `utility_comparisons`, `utility_comparison_options`.
+
+**R4 – Family:** `tasks` (recurrence rule, assignee, related entity), `events`, `lists` + `list_items`, `schools` (education planner, reuses `places`), `school_applications`, `ical_tokens`.
+
+**R5 – Travel:** `travel_profiles`, `trips` (dates, travellers with ages-at-travel), `trip_candidates`, `trip_components` (flight/hotel/transfer/car/other, `is_estimate`, booking URL, checked_at), `fx_rates`.
+
+---
+
+## 7. Module designs
+
+### 7.1 Housing (R1)
+
+**Matching:** a listing matches if `(bedrooms = 3 AND property_type = house)` OR `bedrooms = 4` (any type). Listings often have mixed unit types, so matching runs **per unit type**, and the listing matches if any unit type does. If the type is unknown it shows as "possible match – check", never as a silent drop.
+
+**Daily run (`housing-daily`):**
+1. Fetch `/rent/` and follow pagination or "load more" until exhausted. Record pages fetched.
+2. Fetch every listing page, not just new ones, so status and deadline changes are caught.
+3. Parse to a normalised snapshot. Unknown fields stay `null`; nothing is inferred.
+4. Hash the snapshot and compare it with the last observation. Write an observation with a change summary when it differs.
+5. Status rules: open / closing soon (≤7 days) / closed / unknown. Closed listings are kept forever.
+6. Sanity guard: if the index page returns 200 but **zero** listings parse, mark the run `failed (parser)`, not "0 results".
+7. Enqueue amenity lookup for new listings. Create notifications for new matches, changed matches and deadlines ≤7 days.
+
+**Listing detail tabs:** Overview (rents by unit type, deadline, provider, source link) · **Nearby** (map + grouped list) · History (observations timeline) · Application (your status, dates, exact outcome text, next action, linked documents).
+
+**Nearby panel:** groups for Childcare/ECCE, Primary, Secondary, Further/Higher ed, Bus stops, Mosques, Halal food. Each item shows its distance, a walk estimate and a provenance tag (OSM / Official / Google / You). It carries the label "Distances are estimates; proximity ≠ school admission." You can add places, pin favourites and hide wrong ones. Search radii are configurable (default 2 km for most, 500 m for bus stops, 10 km for universities).
+
+**Pipeline (Limerick priority):** manual project entries with stage and a Cost Rental confirmation state. St Joseph's Hospital and The Gasworks / Dock Road are seeded as **unverified leads**. Research items can be linked to projects.
+
+### 7.2 Bills & tax (R2)
+
+**Flow:** Upload (camera, file or share sheet) → private storage → SHA-256 duplicate check → `documents` row `processing` → GitHub `repository_dispatch` → Python worker:
+1. Extract the text layer (`pdfplumber`). If there's no text, run OCR (Tesseract; try Docling if layouts are poor).
+2. Detect the supplier (keywords, IBAN/VAT numbers).
+3. Run that supplier's parser, if one exists, to get total, VAT, period, invoice no., account ref (masked), and for energy bills kWh by period, unit rates and standing charge.
+4. Generic fallback: amounts, dates and invoice numbers by regex, all with low confidence.
+5. Write `document_extractions` as **proposed** with per-field confidence and the matched snippet.
+
+**Review screen:** the original on one side and proposed fields on the other. Confirm or edit each field, then link the document to an expense, a utility contract or a tax year. The original file is stored once and linked many times.
+
+**Supplier parsers:** written for the suppliers you actually use (tell us which in R2). Each needs 2–3 **redacted** sample bills as fixtures. Real bills never go in the repo.
+
+**WFH relief (Ireland):** rule stored in `tax_rules` with Revenue source URL and version:
+`relief_base = (bills_total × wfh_days ÷ days_in_year) − employer_allowance; claimable = relief_base × 30%` for 2022+. Inputs are electricity, heating and broadband, apportioned when shared. Output shows each figure step by step. Statuses are kept separate: paid / potentially relevant / estimated claimable / actually claimed. Exports are CSV plus a printable year summary. Caddy never files anything.
+
+### 7.3 Utilities (R3)
+
+- Contracts store an end date. `comparison_due_on = end_date − 14 days` is computed in Europe/Dublin calendar days, and updates when the end date changes. The `reminders-daily` job fires **once** on or after that date, and notes when it ran late. **No monthly comparisons.** Past end dates are flagged for review rather than triggering a flood of jobs.
+- **Compare:** your usage profile comes from confirmed bills (day/night/peak kWh, gas kWh). You enter 1–5 offers from bonkers.ie or switcher.ie: rates, standing charge, discount and its duration, cashback, exit fee. A deterministic calculator gives first-year and following-year cost with all assumptions shown. Bord Gáis is excluded from recommendations, and dual fuel is compared against separate suppliers.
+- Mark an offer rejected, selected or negotiating. Expected savings are checked against later bills.
+
+### 7.4 Family & education (R4)
+
+- Tasks (assignee, due, recurrence, linked entity), events, chores, shopping and household lists, plus a **week view** with conflict detection.
+- "Create task" from any housing deadline, contract, trip or school record.
+- A **private iCal feed** (secret URL, revocable) of events and deadlines that you subscribe to in Apple or Google Calendar. Google refreshes these slowly, so the feed isn't real-time.
+- **Share to WhatsApp** (`wa.me`/share-sheet link) on any task, list or event. A WhatsApp bot is out of scope: Meta's Business API isn't built for personal family groups.
+- **Education planner:** schools you're tracking, with admission policy links and checked dates, open days, application deadlines, preference order and fallbacks. It reuses `places` from Housing.
+
+### 7.5 Travel planner (R5)
+
+- Trip brief: adults, children with **ages at travel** (confirmed per trip), departure airports (DUB default; SNN, ORK), date window, nights, budget, board basis and room needs.
+- Deep-link generators open Skyscanner, Google Flights, Booking and similar sites prefilled. You paste back what you find as **components**, each with price, provider, checked time and inclusions/exclusions.
+- The total-cost engine converts currencies with dated ECB rates, shows a per-person breakdown and what's included or excluded, and ranks by total cost with your hard constraints and adjustable weights. Trade-offs are explained, never hidden.
+- Weekly job: a **reminder** for saved trips whose window is approaching or whose prices were checked >7 days ago. Results are never presented as live data.
+
+### 7.6 Operations (all releases)
+
+- `backup-nightly`: `pg_dump` + storage object list → encrypted with `age` → GitHub artifact (90 days). A **monthly restore test** into staging runs as a scheduled workflow.
+- Settings → Data: export everything (JSON + CSV + original files zip) and delete account/household.
+- Settings → Jobs: last run per job, failures and source status.
+
+---
+
+## 8. UI design
+
+### 8.1 Direction: "Calm & clean, dense where it pays"
+
+- **Calm base:** generous spacing, one card style, few borders, short labels. The Today screen should be readable in 10 seconds.
+- **Colour means something:** accents are used only for status, never for decoration (§8.3).
+- **Dense where it pays:** at ≥1024 px, Housing listings, expenses and tax evidence switch from cards to sortable tables with filters.
+- **Provenance is visible but quiet:** small tags like `Official`, `OSM`, `Estimate`, `You`, `Proposed`.
+- **Freshness everywhere:** "Checked 07:14 · OK" or "Failed 07:14 · retry".
+
+### 8.2 Navigation
+
+| Phone (bottom nav) | Desktop (left sidebar) |
+|---|---|
+| **Today** · **Housing** · **Money** (Bills, Tax, Utilities) · **Family** · **More** (Travel, Inbox, Settings) | Today, Housing, Bills, Tax, Utilities, Family, Education, Travel, Inbox, Settings, Jobs |
+
+Global search arrives in R2 (once there's enough data to search).
+
+### 8.3 Theme tokens (Dracula / Alucard)
+
+| Token | Dark (Dracula) | Light (Alucard) | Use |
+|---|---|---|---|
+| `--bg` | `#282A36` | `#FFFBEB` | Page |
+| `--surface` | `#2F3241`* | `#FFFFFF`* | Cards |
+| `--line` | `#44475A` | `#E6E1CF`* | Borders, dividers |
+| `--fg` | `#F8F8F2` | `#1F1F1F` | Text |
+| `--muted` | `#A4AECB`* | `#6C664B` | Secondary text |
+| `--purple` | `#BD93F9` | `#644AC9` | Primary action, focus |
+| `--green` | `#50FA7B` | `#14710A` | New / open / success |
+| `--orange` | `#FFB86C` | `#A34D14` | Closing soon / due |
+| `--red` | `#FF5555` | `#CB3A2A` | Failed / overdue / closed |
+| `--cyan` | `#8BE9FD` | `#036A96` | Links / info |
+| `--yellow` | `#F1FA8C` | `#846E15` | Needs review / estimate |
+| `--pink` | `#FF79C6` | `#A3144D` | Your own picks (saved, curated) |
+
+\* Derived values, to be tuned in the prototype. Dracula's stock comment colour `#6272A4` is only ~3:1 on `#282A36`, which **fails WCAG AA for body text**, so `--muted` is a lighter derived tone. Every text/background pair is contrast-checked in the prototype. Theme options: System (default) / Light / Dark.
+
+**Type:** Inter (variable) for UI, with tabular numerals for all money and dates. JetBrains Mono only for reference numbers.
+
+### 8.4 Screens to prototype (design phase)
+
+1. **Today:** new matches, closing soon, bills to review, contract countdown, this week's family items, job health strip.
+2. **Housing list:** cards on phone, table on desktop, with filters (county, beds, status, applied).
+3. **Listing detail:** Overview / **Nearby** (map + grouped amenities) / History / Application.
+4. **Bill review:** original + proposed fields + link targets.
+5. **Tax year:** WFH calculation breakdown, evidence checklist, export.
+6. **Utility contract:** countdown, usage profile, offer comparison table.
+7. **Family week:** week view, tasks, lists, share to WhatsApp.
+8. **Trip compare:** candidates side by side with total cost and inclusions.
+9. **Inbox + Settings** (theme, alerts, push, members, jobs, data export).
+
+Every screen comes in phone and desktop versions, light and dark, with **empty, loading, failed and offline** states for the first three screens.
+
+### 8.5 Design phase process
+
+1. I build a single clickable HTML prototype (fake but realistic Irish data) and publish it as a private link you can open on your phone.
+2. You click through and leave comments; we do 2–3 iterations.
+3. Approved prototype → `docs/design/` (screens + tokens) → becomes the visual spec for R0.3 onward.
+
+---
+
+## 9. Delivery plan
+
+Each item below is roughly **one Claude Code cloud session = one draft PR**. A release goes live, and you **use it for 2 weeks** before the next release starts. That gate is the main defence against the classic failure of this kind of project: building plumbing for 11 modules and using none of them.
+
+### R0: Foundations + design (≈ 9 PRs)
+
+| ID | Task | Done when |
+|----|------|-----------|
+| 0.1 | Repo bootstrap: SPEC.md, PLAN.md, CLAUDE.md, README | This PR |
+| 0.2 | **Clickable prototype** of §8.4 screens, light/dark | You approve it on your phone |
+| 0.3 | Scaffold Next.js + TS strict + Tailwind + shadcn + theme tokens + lint/format/test tooling + SessionStart hook | `pnpm lint typecheck test build` pass in CI |
+| 0.4 | App shell: responsive nav, theme switch, PWA manifest/icons, Serwist shell, offline banner | Lighthouse PWA installable; installs on iOS + Android |
+| 0.5 | Supabase staging + prod projects; core migrations; RLS + RLS tests in CI | Unauth/other-household access denied in tests |
+| 0.6 | Auth: email OTP, invite second adult, profile, audit events | Both adults log in on phones |
+| 0.7 | Job runner skeleton: `job_runs` ledger, `scripts/jobs` runner, GitHub Actions workflow template, ingest auth | Dummy job visible in Settings → Jobs |
+| 0.8 | Notifications: inbox, Web Push subscribe/send, Resend email digest | Test notification arrives on phone |
+| 0.9 | Vercel deploy (preview per PR, prod on `main`), env vars, nightly backup + restore test | Restore into staging succeeds |
+
+**Exit:** two adults, installed PWA, empty Today, push works, backups proven.
+
+### R1: Housing (≈ 9 PRs)
+
+| ID | Task |
+|----|------|
+| 1.1 | Source audit: fetch `/rent/` + listing pages, robots/terms check, save fixtures, document structure in `docs/integrations/newstarterhomes.md` |
+| 1.2 | Parser + matching rules (per unit type) with fixture unit tests |
+| 1.3 | Listings/observations/applications tables; change detection; "never overwrite user fields" tests |
+| 1.4 | `housing-daily` workflow: crawl, per-source checks, parser sanity guard, notifications |
+| 1.5 | Housing list + filters (cards/table) and listing detail (Overview, History, Application) |
+| 1.6 | Geocoding + Overpass amenities + official school/childcare lists; `places` model |
+| 1.7 | Nearby tab: MapLibre map, grouped list, curation (add/pin/hide), optional Google Places adapter |
+| 1.8 | Pipeline projects (Limerick seeds as unverified leads) |
+| 1.9 | Research contract + ingest endpoint + housing news panel + Claude Code Routine setup |
+
+**Exit:** 7 consecutive mornings run unattended. A deliberately broken fixture shows as a failure. Your edited application outcome survives the next scrape.
+
+### R2: Bills & tax (≈ 7 PRs)
+
+2.1 Upload (camera/share), private storage, dedupe · 2.2 Python worker scaffold + `repository_dispatch` + text extraction · 2.3 OCR path + generic field extraction · 2.4 Supplier parsers (your suppliers) · 2.5 Review queue + expenses + document links · 2.6 Tax years + WFH rule + WFH days entry · 2.7 Exports (CSV + printable) + global search.
+**Exit:** one real bill uploaded once, reviewed, linked to an expense and a tax year, and exported.
+
+### R3: Utilities (≈ 4 PRs)
+
+3.1 Contracts + bills link + usage profile · 3.2 T-14 scheduling in `reminders-daily` (DST + date-change tests) · 3.3 Offer entry + cost calculator + comparison UI · 3.4 Expected vs realised savings.
+**Exit:** tests prove no monthly comparisons and correct rescheduling when the end date changes.
+
+### R4: Family & education (≈ 6 PRs)
+
+4.1 Members + tasks + recurrence · 4.2 Events + week view + conflicts · 4.3 Lists · 4.4 Cross-module "create task" · 4.5 iCal feed + Share to WhatsApp · 4.6 Education planner.
+**Exit:** both adults have used it instead of WhatsApp for lists/tasks for 2 weeks. If not, stop and rethink before adding more.
+
+### R5: Travel planner (≈ 4 PRs)
+
+5.1 Trip briefs + travellers/ages · 5.2 Components + deep links · 5.3 FX + total-cost engine + ranking · 5.4 Compare UI + weekly reminder.
+
+### R6: Hardening (≈ 3 PRs)
+
+Security review (RLS, secrets in bundle, file access), full export/delete, cost & usage page, docs.
+
+**Total ≈ 42 PRs.** At 3–5 sessions a week that's roughly 3–4 months, with most of the calendar time going to your review and the 2-week usage gates rather than coding.
+
+---
+
+## 10. How we use Claude Code cloud sessions
+
+1. **One GitHub issue per task** (IDs above) with acceptance criteria copied from this plan.
+2. **One cloud session per issue.** The session works on its own branch, opens a **draft PR**, and watches CI. Vercel posts a preview URL; you check it on your phone, then merge.
+3. **`CLAUDE.md`** carries the non-negotiables, so every session follows them without re-explaining.
+4. **SessionStart hook** (added in 0.3): installs pnpm deps and Python worker deps, and starts Docker if a task needs it.
+5. **Cloud environment settings you need to change** (environment menu → Edit → Network access → Allowed domains):
+   - `newstarterhomes.ie` (R1)
+   - `overpass-api.de`, `nominatim.openstreetmap.org` (R1)
+   - your `*.supabase.co` staging project and `*.vercel.app` app domain
+   - Environment variables: **staging** keys only. Prod secrets live only in Vercel and GitHub.
+6. **Parallel sessions** only for tasks that don't touch the same files (e.g. 1.6 amenities alongside 1.5 UI).
+7. **Claude Code Routine** (R1.9) for daily housing news. It uses your subscription; swappable per §5.1.
+
+---
+
+## 11. Risks & mitigations
+
+| Risk | Likelihood | Mitigation |
+|------|-----------|------------|
+| Scope sprawl: all 5 modules built, none used daily | **High** (the classic failure for "life OS" apps) | Release gates with 2-week real-use periods; R4 has an explicit stop-and-rethink gate. |
+| newstarterhomes.ie changes markup | Medium | Fixture tests, parser sanity guard (200 + zero parsed = failure), failure alert. |
+| Site terms/robots disallow automated access | Unknown | Checked in 1.1 before building the crawler; fallback is a daily "check manually" reminder + quick-add form. |
+| Halal/childcare data incomplete in OSM | High | Provenance tags, curation, optional Google Places, official lists for schools/ECCE. |
+| OCR poor on phone photos | Medium | Supplier parsers on digital PDFs first; everything goes through review; nothing auto-confirmed. |
+| Supabase Free: pausing, no backups | Medium | Daily job keeps prod alive; own encrypted backups + monthly restore test. |
+| iOS PWA quirks (push, login, storage eviction) | Medium | OTP login, push only after install, no reliance on local storage for data. |
+| Research agent output wrong or invented | Medium | Schema validation; nothing "confirmed" without an official URL; runs logged; agent swappable. |
+| Tax rule changes / misreading Revenue guidance | Low–Med | Versioned rules with source URL and review date; Caddy shows evidence and estimates, never advice. |
+| Free tiers change | Medium | Usage page; portable code (plain Postgres + Next.js); no vendor-only features in the domain layer. |
+
+---
+
+## 12. Open items (answer when we reach them)
+
+- **R1.1:** Does the site allow automated access (robots/terms)? Is listing content in the HTML or loaded by JavaScript?
+- **R1.6:** Which areas or counties should be the default focus besides Limerick? Default search radii OK?
+- **R2.4:** Which electricity, gas and broadband suppliers do you use? Please provide 2–3 redacted bills each.
+- **R2.6:** Which adults claim WFH relief? Does an employer pay the €3.20/day allowance?
+- **R4:** Kids' names/ages for member profiles. Which schools to track?
+- **Optional:** custom domain? Google Places key for halal coverage?
