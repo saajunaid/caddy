@@ -1,0 +1,7 @@
+pnpm-lock.yaml
+.next
+node_modules
+public/sw.js
+docs/design/prototype.html
+SPEC.md
+*.md

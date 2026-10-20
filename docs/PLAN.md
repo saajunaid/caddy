@@ -41,7 +41,12 @@ Caddy is an organiser and early-warning system. It never applies, books, switche
 | D14 | Job runner | **GitHub Actions cron** | Free minutes, long timeouts, can run Python/OCR and a headless browser, visible logs. Vercel Hobby cron is once a day with ±59 min jitter. |
 | D15 | Visual direction | **Calm & clean, dense where it pays**, **Dracula (dark) / Alucard (light)** | Neon accents work as signals on a calm base. Desktop gets tables where scanning matters. |
 | D16 | Devices | **Phone and desktop equally** | Bottom nav on phone, sidebar on desktop. Every screen is designed at both widths. |
-| D17 | Design process | **Clickable HTML prototype first**, then code | Cheap to change; you test it on your phone before any app code. |
+| D17 | Design process | **Clickable HTML prototype first**, then code. Prototype: `docs/design/prototype.html` | Cheap to change; you test it on your phone before any app code. |
+| D18 | Timeline | **2-day sprint** using parallel Claude Code cloud sessions (§9) | User requirement. 2-week usage gates become post-launch reviews. |
+| D19 | Build cost | **All build work in Claude Code cloud sessions**; no separate API key; no runtime AI | User requirement. |
+| D20 | Environments | **One Supabase project (prod)**, no staging. Vercel previews use the same project; only merges to `main` change the schema (via GitHub Actions). | User choice: halves setup for a two-person app. Tests run against a local Postgres in CI, never the real database. |
+| D21 | Service worker | **Hand-written `public/sw.js`** (offline page + hashed static assets only) instead of Serwist | Next.js 16's PWA guide uses a plain worker; avoids a plugin tied to the bundler. Push handlers are added to the same file in PR-3. |
+| D22 | Dev network | Cloud environment has **full network access**; it holds only public values (Supabase URL, publishable key) | User choice. Secrets live only in Vercel and GitHub Actions. |
 
 ---
 
@@ -53,7 +58,7 @@ Caddy is an organiser and early-warning system. It never applies, books, switche
 | Optional AI extraction/summaries | No AI in the app. OCR + rules only. | D12 |
 | `last30day` skill invoked by the app | App exposes a research contract; an external agent (Claude Code Routine / Gemini) fills it | D13. A coding-agent skill can't run inside Vercel. |
 | Live flight/hotel/car provider adapters, weekly automated discovery | Manual candidates + deep links + total-cost engine; weekly *reminder* for saved trip windows | D6 |
-| Supabase local via Docker as the main dev loop | Hosted **staging** Supabase project for dev/previews. Local Supabase only in CI. | Cloud dev containers can't reliably pull all Supabase images. CI runners can. |
+| Supabase local via Docker as the main dev loop | One hosted Supabase project; migrations and RLS tests run against a throwaway local Postgres in CI | D20. Cloud dev containers can't reliably pull all Supabase images. CI runners can. |
 | Vercel Cron / pg_cron | GitHub Actions cron | D14 |
 | Utility tariff source adapters | **Manual offer entry** (you paste rates from bonkers.ie / switcher.ie) + deterministic calculator | No public Irish tariff API. Scraping comparison sites breaches their terms. |
 | ~60 tables up front | Tables added per release (§6) | Avoid building plumbing nobody uses yet. |
@@ -77,7 +82,7 @@ Pin exact versions at scaffold time (latest stable that's at least 2 weeks old).
 | DB client | `@supabase/ssr` + `supabase-js` | Service-role key only in GitHub Actions secrets and server-only code. |
 | Auth | Supabase Auth, email OTP code | Invite-only: sign-ups disabled; second adult invited from Settings. |
 | Files | Supabase Storage, private bucket, short-lived signed URLs | SHA-256 dedupe. |
-| PWA | Serwist (`@serwist/next`) | Caches the app shell only. No private data in Cache Storage. |
+| PWA | Next.js manifest route + hand-written `public/sw.js` (D21) | Caches the offline page and hashed static assets only. No private data in Cache Storage. |
 | Push | Web Push (VAPID) via `web-push` | Subscriptions stored per device. |
 | Email | Resend (free tier) | Digest only when something changed. Check current free-tier limits at setup. |
 | Maps | MapLibre GL JS + OpenFreeMap tiles | Free, no API key. |
@@ -91,7 +96,7 @@ Pin exact versions at scaffold time (latest stable that's at least 2 weeks old).
 | Tests | Vitest, Testing Library, Playwright (e2e), pytest (worker), pgTAP / SQL tests for RLS | |
 | Quality | ESLint, Prettier, `tsc --noEmit`, Ruff for Python | |
 | CI | GitHub Actions | Lint, typecheck, unit, build, migration + RLS tests on `supabase start`, worker tests. |
-| Hosting | Vercel Hobby (personal, non-commercial use) + Supabase Free ×2 (staging, prod) | Baseline **€0/month**. Optional: domain (~€15/yr), Google Places (likely within free allowance). |
+| Hosting | Vercel Hobby (personal, non-commercial use) + Supabase Free ×1 (D20) | Baseline **€0/month**. Optional: domain (~€15/yr), Google Places (likely within free allowance). |
 
 ### Known platform gotchas (designed around)
 
@@ -243,7 +248,7 @@ All tables: UUID PK, `household_id` (indexed, RLS-scoped), `created_at`/`updated
 
 ### 7.6 Operations (all releases)
 
-- `backup-nightly`: `pg_dump` + storage object list → encrypted with `age` → GitHub artifact (90 days). A **monthly restore test** into staging runs as a scheduled workflow.
+- `backup-nightly`: `pg_dump` + storage object list → encrypted with `age` → GitHub artifact (90 days). A **monthly restore test** into a throwaway Postgres container in GitHub Actions proves the backup is usable.
 - Settings → Data: export everything (JSON + CSV + original files zip) and delete account/household.
 - Settings → Jobs: last run per job, failures and source status.
 
@@ -272,10 +277,10 @@ Global search arrives in R2 (once there's enough data to search).
 | Token | Dark (Dracula) | Light (Alucard) | Use |
 |---|---|---|---|
 | `--bg` | `#282A36` | `#FFFBEB` | Page |
-| `--surface` | `#2F3241`* | `#FFFFFF`* | Cards |
-| `--line` | `#44475A` | `#E6E1CF`* | Borders, dividers |
+| `--surface` | `#2E303E`* | `#FFFFFF`* | Cards |
+| `--line` | `#44475A` | `#E3DCC2`* | Borders, dividers |
 | `--fg` | `#F8F8F2` | `#1F1F1F` | Text |
-| `--muted` | `#A4AECB`* | `#6C664B` | Secondary text |
+| `--muted` | `#9AA5CE`* | `#6C664B` | Secondary text |
 | `--purple` | `#BD93F9` | `#644AC9` | Primary action, focus |
 | `--green` | `#50FA7B` | `#14710A` | New / open / success |
 | `--orange` | `#FFB86C` | `#A34D14` | Closing soon / due |
@@ -286,7 +291,7 @@ Global search arrives in R2 (once there's enough data to search).
 
 \* Derived values, to be tuned in the prototype. Dracula's stock comment colour `#6272A4` is only ~3:1 on `#282A36`, which **fails WCAG AA for body text**, so `--muted` is a lighter derived tone. Every text/background pair is contrast-checked in the prototype. Theme options: System (default) / Light / Dark.
 
-**Type:** Inter (variable) for UI, with tabular numerals for all money and dates. JetBrains Mono only for reference numbers.
+**Type:** Instrument Sans for UI; JetBrains Mono (a nod to Dracula's editor roots) for money, dates and reference numbers, always with tabular numerals.
 
 ### 8.4 Screens to prototype (design phase)
 
@@ -310,82 +315,105 @@ Every screen comes in phone and desktop versions, light and dark, with **empty, 
 
 ---
 
-## 9. Delivery plan
+## 9. Delivery plan: 2-day sprint
 
-Each item below is roughly **one Claude Code cloud session = one draft PR**. A release goes live, and you **use it for 2 weeks** before the next release starts. That gate is the main defence against the classic failure of this kind of project: building plumbing for 11 modules and using none of them.
+**Target:** every module working and deployed within 2 days, built entirely in Claude Code cloud sessions.
+The original 42-PR, 3–4 month plan is replaced by **~14 larger PRs**. Modules are built in **parallel cloud sessions** once the foundation is merged.
 
-### R0: Foundations + design (≈ 9 PRs)
+### What "done in 2 days" means
 
-| ID | Task | Done when |
-|----|------|-----------|
-| 0.1 | Repo bootstrap: SPEC.md, PLAN.md, CLAUDE.md, README | This PR |
-| 0.2 | **Clickable prototype** of §8.4 screens, light/dark | You approve it on your phone |
-| 0.3 | Scaffold Next.js + TS strict + Tailwind + shadcn + theme tokens + lint/format/test tooling + SessionStart hook | `pnpm lint typecheck test build` pass in CI |
-| 0.4 | App shell: responsive nav, theme switch, PWA manifest/icons, Serwist shell, offline banner | Lighthouse PWA installable; installs on iOS + Android |
-| 0.5 | Supabase staging + prod projects; core migrations; RLS + RLS tests in CI | Unauth/other-household access denied in tests |
-| 0.6 | Auth: email OTP, invite second adult, profile, audit events | Both adults log in on phones |
-| 0.7 | Job runner skeleton: `job_runs` ledger, `scripts/jobs` runner, GitHub Actions workflow template, ingest auth | Dummy job visible in Settings → Jobs |
-| 0.8 | Notifications: inbox, Web Push subscribe/send, Resend email digest | Test notification arrives on phone |
-| 0.9 | Vercel deploy (preview per PR, prod on `main`), env vars, nightly backup + restore test | Restore into staging succeeds |
+| In the 2 days | After the 2 days (can't be compressed) |
+|---|---|
+| All 5 modules usable, deployed to Vercel + Supabase prod | 7 consecutive unattended morning runs of the housing check |
+| Core logic unit-tested (matching, change detection, money, T-14 dates, WFH calc, trip totals) | Supplier parsers tuned on your real (redacted) bills |
+| RLS tests, CI green, backups running | iPhone/Android install + push tested by you on your phones |
+| Scheduled jobs live in GitHub Actions | The 2-week real-use check per module (now a post-launch review, not a gate before building) |
 
-**Exit:** two adults, installed PWA, empty Today, push works, backups proven.
+**Your time is the bottleneck, not coding.** You'll need about 30 minutes of account setup before Day 1 (§9.1), then roughly 15-minute review/merge windows every 2–3 hours.
 
-### R1: Housing (≈ 9 PRs)
+### 9.1 Prerequisites (you, before Day 1 build starts)
 
-| ID | Task |
-|----|------|
-| 1.1 | Source audit: fetch `/rent/` + listing pages, robots/terms check, save fixtures, document structure in `docs/integrations/newstarterhomes.md` |
-| 1.2 | Parser + matching rules (per unit type) with fixture unit tests |
-| 1.3 | Listings/observations/applications tables; change detection; "never overwrite user fields" tests |
-| 1.4 | `housing-daily` workflow: crawl, per-source checks, parser sanity guard, notifications |
-| 1.5 | Housing list + filters (cards/table) and listing detail (Overview, History, Application) |
-| 1.6 | Geocoding + Overpass amenities + official school/childcare lists; `places` model |
-| 1.7 | Nearby tab: MapLibre map, grouped list, curation (add/pin/hide), optional Google Places adapter |
-| 1.8 | Pipeline projects (Limerick seeds as unverified leads) |
-| 1.9 | Research contract + ingest endpoint + housing news panel + Claude Code Routine setup |
+1. **GitHub:** set `main` as the default branch (repo → Settings → General → Default branch).
+2. **Supabase:** one project, `caddy-prod` (region: West EU / Ireland). No access token is needed (D20). ✅ Done.
+3. **Vercel:** sign in with GitHub and import `saajunaid/caddy` (framework: Next.js). Don't add env vars yet; the scaffold PR lists them.
+4. **Cloud environment:** add the extra domains and variables listed in §10.
+5. **Optional, Day 2:** Resend account + API key (email digest); Google Cloud key for Places (halal coverage).
 
-**Exit:** 7 consecutive mornings run unattended. A deliberately broken fixture shows as a failure. Your edited application outcome survives the next scrape.
+### 9.2 Day 1: foundation + Housing
 
-### R2: Bills & tax (≈ 7 PRs)
+| Block | PR | Contents (plan task IDs) | Runs |
+|---|---|---|---|
+| A | **PR-1 Foundation** | Next.js scaffold, Tailwind + Dracula/Alucard tokens from the prototype, app shell (sidebar/bottom nav), PWA (manifest, icons, service worker, offline banner), lint/typecheck/test/CI, SessionStart hook (0.3, 0.4) | This session |
+| A | **PR-2 Data + auth** | Supabase migrations (core tables), RLS + RLS tests, email OTP login, invite second adult, audit events, generated types (0.5, 0.6) | This session |
+| A | **PR-3 Jobs + alerts + deploy** | `job_runs` ledger, job runner, GitHub Actions templates, ingest endpoint auth, in-app inbox, Web Push, Vercel prod deploy, nightly encrypted backup (0.7, 0.8, 0.9) | This session |
+| B | **PR-4 Housing engine** | newstarterhomes.ie fixtures, parser, matching, observations/change detection, `housing-daily` workflow, sanity guard, notifications (1.1–1.4) | Parallel session 1 |
+| B | **PR-5 Housing UI** | List (cards/table), filters, detail tabs, history, application tracker, create-task-from-deadline (1.5) | Parallel session 2 |
+| B | **PR-6 Neighbourhood** | Geocoding, Overpass + official school/ECCE lists, `places`, Nearby tab with MapLibre map, curation, optional Google Places adapter (1.6, 1.7) | Parallel session 3 |
+| B | **PR-7 Pipeline + news** | Limerick pipeline projects, research contract (prompt + schema + ingest), news panel, Claude Code Routine set up (1.8, 1.9) | Parallel session 4 |
 
-2.1 Upload (camera/share), private storage, dedupe · 2.2 Python worker scaffold + `repository_dispatch` + text extraction · 2.3 OCR path + generic field extraction · 2.4 Supplier parsers (your suppliers) · 2.5 Review queue + expenses + document links · 2.6 Tax years + WFH rule + WFH days entry · 2.7 Exports (CSV + printable) + global search.
-**Exit:** one real bill uploaded once, reviewed, linked to an expense and a tax year, and exported.
+**Day 1 exit:** both adults log in on their phones, the housing check has run once from GitHub Actions against the live site, and listings with neighbourhoods show in the app.
 
-### R3: Utilities (≈ 4 PRs)
+### 9.3 Day 2: the other four modules + hardening
 
-3.1 Contracts + bills link + usage profile · 3.2 T-14 scheduling in `reminders-daily` (DST + date-change tests) · 3.3 Offer entry + cost calculator + comparison UI · 3.4 Expected vs realised savings.
-**Exit:** tests prove no monthly comparisons and correct rescheduling when the end date changes.
+| Block | PR | Contents | Runs |
+|---|---|---|---|
+| C | **PR-8 Documents + tax** | Upload (camera/PDF), private storage, dedupe, Python worker (text layer → OCR → parsers), review queue, expenses, document links, tax years, WFH rule + calc, CSV/printable export (R2) | Parallel session 1 |
+| C | **PR-9 Utilities** | Contracts, bill→usage profile, T-14 scheduling (DST tests, no monthly runs), offer entry, cost calculator, Bord Gáis exclusion, savings tracking (R3) | Parallel session 2 |
+| C | **PR-10 Family + education** | Members, tasks + recurrence, events, week view + clashes, lists, iCal feed, Share to WhatsApp, education planner (R4) | Parallel session 3 |
+| C | **PR-11 Travel** | Trip briefs, travellers/ages, components, deep links, ECB FX, total-cost engine + ranking, weekly reminder (R5) | Parallel session 4 |
+| D | **PR-12 Today + search + email** | Today screen wired to real data, global search, Resend email digest | This session, after C merges |
+| D | **PR-13 Hardening** | Security review (RLS, secrets in bundle, signed URLs), export/delete, restore test, Settings → Jobs | This session |
+| D | **PR-14 Docs** | README setup, runbooks, `docs/integrations/*` | This session |
 
-### R4: Family & education (≈ 6 PRs)
+**Day 2 exit:** every module usable on prod, CI green, a backup restored into a throwaway database, and a checklist handed to you for phone testing and the first week of monitoring.
 
-4.1 Members + tasks + recurrence · 4.2 Events + week view + conflicts · 4.3 Lists · 4.4 Cross-module "create task" · 4.5 iCal feed + Share to WhatsApp · 4.6 Education planner.
-**Exit:** both adults have used it instead of WhatsApp for lists/tasks for 2 weeks. If not, stop and rethink before adding more.
+### 9.4 Keeping parallel sessions from colliding
 
-### R5: Travel planner (≈ 4 PRs)
-
-5.1 Trip briefs + travellers/ages · 5.2 Components + deep links · 5.3 FX + total-cost engine + ranking · 5.4 Compare UI + weekly reminder.
-
-### R6: Hardening (≈ 3 PRs)
-
-Security review (RLS, secrets in bundle, file access), full export/delete, cost & usage page, docs.
-
-**Total ≈ 42 PRs.** At 3–5 sessions a week that's roughly 3–4 months, with most of the calendar time going to your review and the 2-week usage gates rather than coding.
+- PR-1 to PR-3 create every shared file first: nav registry, theme, DB client, types, job runner, notification API. Module sessions only **add** files in `src/modules/<module>`, `src/app/(app)/<module>`, `scripts/jobs/<module>*`, `.github/workflows/<module>*`.
+- Each module gets its own migration file with a module-specific timestamp block, so migrations never conflict.
+- Shared-file edits a module needs (e.g. one nav entry) are kept to one-line additions; conflicts are resolved by the merging session.
+- Merge order inside a block doesn't matter. Each PR must be green on its own.
 
 ---
 
 ## 10. How we use Claude Code cloud sessions
 
-1. **One GitHub issue per task** (IDs above) with acceptance criteria copied from this plan.
-2. **One cloud session per issue.** The session works on its own branch, opens a **draft PR**, and watches CI. Vercel posts a preview URL; you check it on your phone, then merge.
-3. **`CLAUDE.md`** carries the non-negotiables, so every session follows them without re-explaining.
-4. **SessionStart hook** (added in 0.3): installs pnpm deps and Python worker deps, and starts Docker if a task needs it.
-5. **Cloud environment settings you need to change** (environment menu → Edit → Network access → Allowed domains):
-   - `newstarterhomes.ie` (R1)
-   - `overpass-api.de`, `nominatim.openstreetmap.org` (R1)
-   - your `*.supabase.co` staging project and `*.vercel.app` app domain
-   - Environment variables: **staging** keys only. Prod secrets live only in Vercel and GitHub.
-6. **Parallel sessions** only for tasks that don't touch the same files (e.g. 1.6 amenities alongside 1.5 UI).
-7. **Claude Code Routine** (R1.9) for daily housing news. It uses your subscription; swappable per §5.1.
+1. **All development runs as Claude Code cloud sessions** on your account: this session, plus the parallel sessions it starts for Blocks B and C. Nothing in the build uses a separate Anthropic API key, and the app itself makes **no AI calls at runtime** (D12). The daily housing-news routine is also a Claude Code session.
+2. **One draft PR per row** in §9. CI runs on every PR, and Vercel posts a preview URL. You check it on your phone, then merge.
+3. **`CLAUDE.md`** carries the non-negotiables so parallel sessions all follow the same rules.
+4. **SessionStart hook** (PR-1) installs pnpm and Python deps automatically in every new session.
+5. **Cloud environment settings** (environment menu → Edit → Network access → Custom → Allowed domains, keep "Also include default list of common package managers" ticked):
+   ```text
+   newstarterhomes.ie
+   *.newstarterhomes.ie
+   overpass-api.de
+   *.overpass-api.de
+   overpass.kumi.systems
+   nominatim.openstreetmap.org
+   *.supabase.co
+   api.supabase.com
+   *.vercel.app
+   data.gov.ie
+   www.ecb.europa.eu
+   tiles.openfreemap.org
+   ```
+   The environment currently has **Full** network access (D22), so this list is only needed if you switch back to Custom.
+
+   **Environment variables** (public values only; secrets live only in Vercel and GitHub):
+   ```text
+   NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+   SUPABASE_PROJECT_REF=<project-ref>
+   ```
+   **Where each secret lives**
+
+   | Secret | GitHub Actions secret name | Vercel variable (Production + Preview) |
+   |---|---|---|
+   | Project URL | `SUPABASE_PROD_URL` | `NEXT_PUBLIC_SUPABASE_URL` |
+   | Publishable key | (not needed) | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` |
+   | Secret key | `SUPABASE_PROD_SECRET_KEY` | `SUPABASE_SECRET_KEY` (Sensitive) |
+   | Database URL (Session pooler) | `SUPABASE_PROD_DB_URL` | (not needed) |
+6. **Parallel sessions** follow §9.4. This session coordinates: it starts them, reviews their PRs and merges in order.
 
 ---
 
@@ -393,7 +421,9 @@ Security review (RLS, secrets in bundle, file access), full export/delete, cost 
 
 | Risk | Likelihood | Mitigation |
 |------|-----------|------------|
-| Scope sprawl: all 5 modules built, none used daily | **High** (the classic failure for "life OS" apps) | Release gates with 2-week real-use periods; R4 has an explicit stop-and-rethink gate. |
+| Scope sprawl: all 5 modules built, none used daily | **High** (the classic failure for "life OS" apps, and higher with a 2-day build) | Today screen surfaces only what needs action; weekly 10-minute review for the first month; cut or simplify any module unused after 2 weeks. |
+| 2-day build quality | Medium | Core logic unit-tested; CI must be green per PR; known gaps listed in each PR; hardening PR-13 before real bills are uploaded. |
+| Overpass API resets connections from the dev sandbox | Medium | Use a mirror (`overpass.kumi.systems`) in dev; production lookups run in GitHub Actions with caching. |
 | newstarterhomes.ie changes markup | Medium | Fixture tests, parser sanity guard (200 + zero parsed = failure), failure alert. |
 | Site terms/robots disallow automated access | Unknown | Checked in 1.1 before building the crawler; fallback is a daily "check manually" reminder + quick-add form. |
 | Halal/childcare data incomplete in OSM | High | Provenance tags, curation, optional Google Places, official lists for schools/ECCE. |

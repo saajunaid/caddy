@@ -1,0 +1,192 @@
+@import "tailwindcss";
+
+/*
+ * Caddy theme tokens. Dark-first: Dracula on bare :root, Alucard (Dracula's light variant)
+ * when the OS prefers light or the user picks Light. The user's choice sets data-theme on <html>.
+ * Accent colours carry meaning: green new/open, orange due soon, red failed/closed,
+ * yellow needs review/estimate, purple primary, cyan links/info, pink the user's own picks.
+ */
+:root {
+  --bg: #282a36;
+  --surface: #2e303e;
+  --sunk: #21222c;
+  --line: #44475a;
+  --fg: #f8f8f2;
+  --muted: #9aa5ce;
+  --purple: #bd93f9;
+  --green: #50fa7b;
+  --orange: #ffb86c;
+  --red: #ff5555;
+  --cyan: #8be9fd;
+  --yellow: #f1fa8c;
+  --pink: #ff79c6;
+  --on-accent: #21222c;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #fffbeb;
+    --surface: #ffffff;
+    --sunk: #f5efd8;
+    --line: #e3dcc2;
+    --fg: #1f1f1f;
+    --muted: #6c664b;
+    --purple: #644ac9;
+    --green: #14710a;
+    --orange: #a34d14;
+    --red: #cb3a2a;
+    --cyan: #036a96;
+    --yellow: #846e15;
+    --pink: #a3144d;
+    --on-accent: #ffffff;
+    color-scheme: light;
+  }
+}
+
+:root[data-theme="light"] {
+  --bg: #fffbeb;
+  --surface: #ffffff;
+  --sunk: #f5efd8;
+  --line: #e3dcc2;
+  --fg: #1f1f1f;
+  --muted: #6c664b;
+  --purple: #644ac9;
+  --green: #14710a;
+  --orange: #a34d14;
+  --red: #cb3a2a;
+  --cyan: #036a96;
+  --yellow: #846e15;
+  --pink: #a3144d;
+  --on-accent: #ffffff;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #282a36;
+  --surface: #2e303e;
+  --sunk: #21222c;
+  --line: #44475a;
+  --fg: #f8f8f2;
+  --muted: #9aa5ce;
+  --purple: #bd93f9;
+  --green: #50fa7b;
+  --orange: #ffb86c;
+  --red: #ff5555;
+  --cyan: #8be9fd;
+  --yellow: #f1fa8c;
+  --pink: #ff79c6;
+  --on-accent: #21222c;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-sunk: var(--sunk);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-accent: var(--purple);
+  --color-on-accent: var(--on-accent);
+  --color-ok: var(--green);
+  --color-due: var(--orange);
+  --color-bad: var(--red);
+  --color-info: var(--cyan);
+  --color-review: var(--yellow);
+  --color-mine: var(--pink);
+  --font-sans:
+    var(--font-instrument-sans), system-ui, -apple-system, "Segoe UI", Roboto,
+    sans-serif;
+  --font-mono:
+    var(--font-jetbrains-mono), ui-monospace, "SF Mono", Menlo, Consolas,
+    monospace;
+  --nav-h: 64px;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Paint the area behind the iOS status bar in standalone mode. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0 0 auto;
+    height: env(safe-area-inset-top, 0px);
+    z-index: 40;
+    background: var(--sunk);
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  :focus-visible {
+    outline: 2px solid var(--purple);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+}
+
+@layer components {
+  /* Status chip. Set --c to the meaning colour, e.g. style={{ "--c": "var(--green)" }}. */
+  .chip {
+    --c: var(--muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--c);
+    background: color-mix(in srgb, var(--c) 15%, transparent);
+  }
+  .chip[data-dot]::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--c);
+  }
+  /* Provenance tag: where a fact came from. */
+  .tag {
+    --c: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    padding: 1px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    color: var(--c);
+    border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+  }
+  .label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
