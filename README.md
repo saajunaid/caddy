@@ -8,4 +8,4 @@ A private household PWA for an Irish family. It watches Cost Rental listings (wi
 
 Stack: Next.js + TypeScript on Vercel, Supabase (Postgres, Auth, Storage), GitHub Actions for scheduled jobs and the document worker.
 
-Status: planning complete; next step is the clickable UI prototype (task 0.2). Setup instructions will be added with the scaffold (task 0.3).
+Status: planning done and clickable prototype ready ([`docs/design/prototype.html`](docs/design/prototype.html)). Next: PR-1 Foundation (see the 2-day sprint in `docs/PLAN.md` §9). Setup instructions arrive with the scaffold.

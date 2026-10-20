@@ -1,0 +1,798 @@
+<title>Caddy Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: app shell. Phone = sticky top bar + fixed bottom nav. Desktop (>=1024px) = left sidebar + content column.
+   Dark-first: Dracula on bare :root, Alucard (Dracula light) under prefers-color-scheme: light / data-theme="light". */
+:root {
+  --bg: #282A36;
+  --surface: #2E303E;
+  --sunk: #21222C;
+  --line: #44475A;
+  --fg: #F8F8F2;
+  --muted: #9AA5CE;
+  --purple: #BD93F9;
+  --green: #50FA7B;
+  --orange: #FFB86C;
+  --red: #FF5555;
+  --cyan: #8BE9FD;
+  --yellow: #F1FA8C;
+  --pink: #FF79C6;
+  --on-accent: #21222C;
+  --shadow: 0 1px 0 rgba(0,0,0,.25);
+  --font-ui: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --r: 10px;
+  --nav-h: 64px;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #FFFBEB; --surface: #FFFFFF; --sunk: #F5EFD8; --line: #E3DCC2; --fg: #1F1F1F; --muted: #6C664B;
+    --purple: #644AC9; --green: #14710A; --orange: #A34D14; --red: #CB3A2A; --cyan: #036A96; --yellow: #846E15; --pink: #A3144D;
+    --on-accent: #FFFFFF; --shadow: 0 1px 2px rgba(60,50,20,.08);
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #FFFBEB; --surface: #FFFFFF; --sunk: #F5EFD8; --line: #E3DCC2; --fg: #1F1F1F; --muted: #6C664B;
+  --purple: #644AC9; --green: #14710A; --orange: #A34D14; --red: #CB3A2A; --cyan: #036A96; --yellow: #846E15; --pink: #A3144D;
+  --on-accent: #FFFFFF; --shadow: 0 1px 2px rgba(60,50,20,.08);
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #282A36; --surface: #2E303E; --sunk: #21222C; --line: #44475A; --fg: #F8F8F2; --muted: #9AA5CE;
+  --purple: #BD93F9; --green: #50FA7B; --orange: #FFB86C; --red: #FF5555; --cyan: #8BE9FD; --yellow: #F1FA8C; --pink: #FF79C6;
+  --on-accent: #21222C; --shadow: 0 1px 0 rgba(0,0,0,.25);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--sunk); }
+a { color: var(--cyan); text-decoration: none; }
+a:hover { text-decoration: underline; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; border-radius: 6px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.01em; }
+h2 { font-size: 1.05rem; font-weight: 600; }
+h3 { font-size: .95rem; font-weight: 600; }
+p { margin: 0; }
+.mono, .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.num { font-size: .92em; }
+.muted { color: var(--muted); }
+.small { font-size: .82rem; }
+.label { font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+/* ---------- Shell ---------- */
+.app { display: grid; grid-template-columns: 1fr; min-height: 100%; }
+.sidebar { display: none; }
+.topbar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  display: flex; align-items: center; gap: 10px;
+  padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--sunk); border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.05rem; }
+.brand-mark { width: 26px; height: 26px; border-radius: 8px; background: var(--purple); color: var(--on-accent); display: grid; place-items: center; font-family: var(--font-mono); font-size: .85rem; font-weight: 600; }
+.topbar .spacer { flex: 1; }
+.icon-btn { position: relative; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 10px; border: 1px solid transparent; background: transparent; cursor: pointer; color: var(--fg); }
+.icon-btn:hover { background: var(--surface); border-color: var(--line); }
+.icon-btn .dot { position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--pink); }
+.sample-pill { font-size: .7rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--yellow); border: 1px solid color-mix(in srgb, var(--yellow) 45%, transparent); padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+
+main { min-width: 0; padding-block: 20px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.page { max-width: 1120px; margin: 0 auto; display: grid; gap: 22px; }
+.page > *, .grid-2 > *, .stack > *, .trips > * { min-width: 0; }
+
+.bottomnav {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 6;
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px);
+  background: var(--sunk); border-top: 1px solid var(--line);
+}
+.bottomnav button { height: var(--nav-h); display: grid; place-items: center; align-content: center; gap: 2px; background: none; border: 0; color: var(--muted); font-size: .72rem; font-weight: 500; cursor: pointer; }
+.bottomnav button[aria-current="page"] { color: var(--purple); }
+.bottomnav svg { width: 22px; height: 22px; }
+
+@media (min-width: 1024px) {
+  .app { grid-template-columns: 236px 1fr; }
+  .topbar, .bottomnav { display: none; }
+  .sidebar {
+    display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    padding: 18px 12px; padding-left: max(12px, env(safe-area-inset-left, 0px)); background: var(--sunk); border-right: 1px solid var(--line);
+  }
+  .sidebar .brand { padding: 4px 8px 16px; }
+  .sidebar .group { margin: 14px 8px 4px; }
+  .navlink { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; color: var(--fg); background: none; border: 0; cursor: pointer; text-align: left; font-weight: 500; }
+  .navlink svg { width: 18px; height: 18px; color: var(--muted); }
+  .navlink:hover { background: var(--surface); }
+  .navlink[aria-current="page"] { background: color-mix(in srgb, var(--purple) 18%, transparent); color: var(--fg); }
+  .navlink[aria-current="page"] svg { color: var(--purple); }
+  .navlink .count { margin-left: auto; font-family: var(--font-mono); font-size: .75rem; color: var(--muted); }
+  .sidebar .foot { margin-top: auto; padding: 12px 8px 0; display: grid; gap: 8px; }
+  main { padding-block: 28px 48px; padding-left: 36px; padding-right: max(36px, env(safe-area-inset-right, 0px)); }
+}
+
+/* ---------- Building blocks ---------- */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); }
+.pad { padding: 16px; }
+.stack { display: grid; gap: 12px; }
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.between { justify-content: space-between; }
+.grid-2 { display: grid; gap: 22px; grid-template-columns: 1fr; }
+@media (min-width: 900px) { .grid-2 { grid-template-columns: 1.35fr 1fr; } }
+.section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.section-head a, .linkbtn { font-size: .85rem; background: none; border: 0; color: var(--cyan); cursor: pointer; padding: 0; }
+
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: .75rem; font-weight: 600; padding: 2px 9px; border-radius: 999px; white-space: nowrap; --c: var(--muted); color: var(--c); background: color-mix(in srgb, var(--c) 15%, transparent); }
+.chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
+.chip.plain::before { display: none; }
+.c-green { --c: var(--green); } .c-orange { --c: var(--orange); } .c-red { --c: var(--red); } .c-yellow { --c: var(--yellow); }
+.c-cyan { --c: var(--cyan); } .c-purple { --c: var(--purple); } .c-pink { --c: var(--pink); } .c-muted { --c: var(--muted); }
+
+.tag { font-family: var(--font-mono); font-size: .68rem; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.tag.official { color: var(--cyan); border-color: color-mix(in srgb, var(--cyan) 40%, transparent); }
+.tag.you { color: var(--pink); border-color: color-mix(in srgb, var(--pink) 40%, transparent); }
+.tag.estimate, .tag.proposed { color: var(--yellow); border-color: color-mix(in srgb, var(--yellow) 40%, transparent); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 14px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 600; font-size: .88rem; color: var(--fg); }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--purple); border-color: var(--purple); color: var(--on-accent); }
+.btn.primary:hover { filter: brightness(1.06); }
+.btn svg { width: 16px; height: 16px; }
+
+.list { display: grid; }
+.list > * + * { border-top: 1px solid var(--line); }
+.item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; min-width: 0; }
+.item .grow { flex: 1; min-width: 0; }
+.item .title { font-weight: 600; }
+.item.clickable { cursor: pointer; }
+.item.clickable:hover { background: color-mix(in srgb, var(--fg) 4%, transparent); }
+.stripe { width: 4px; align-self: stretch; border-radius: 4px; background: var(--c, var(--line)); flex: none; }
+
+.filters { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.filter { flex: none; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: transparent; cursor: pointer; font-size: .85rem; font-weight: 500; color: var(--fg); }
+.filter[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.filter .n { font-family: var(--font-mono); font-size: .75rem; opacity: .7; margin-left: 4px; }
+
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.tab { flex: none; padding: 10px 12px; background: none; border: 0; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 600; color: var(--muted); }
+.tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--purple); }
+
+.health { display: flex; gap: 8px; flex-wrap: wrap; }
+.health .h { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px; background: var(--sunk); border: 1px solid var(--line); font-size: .78rem; }
+.fresh { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .8rem; color: var(--muted); }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+th { text-align: left; font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 11px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+tr:last-child td { border-bottom: 0; }
+tbody tr.clickable { cursor: pointer; }
+tbody tr.clickable:hover td { background: color-mix(in srgb, var(--fg) 4%, transparent); }
+td.r, th.r { text-align: right; }
+
+.only-desk { display: none; }
+@media (min-width: 1024px) { .only-desk { display: block; } .only-phone { display: none; } }
+
+.kv { display: grid; grid-template-columns: minmax(120px, 40%) 1fr; gap: 8px 14px; font-size: .9rem; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; min-width: 0; }
+
+.note { font-size: .82rem; color: var(--muted); padding: 10px 12px; border-left: 3px solid var(--line); background: var(--sunk); border-radius: 0 8px 8px 0; }
+
+.field { display: grid; gap: 6px; }
+.field label { font-size: .82rem; font-weight: 600; }
+.input, select.input, textarea.input { width: 100%; min-height: 40px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); }
+textarea.input { min-height: 72px; resize: vertical; }
+
+.listing-card { display: grid; gap: 10px; padding: 14px 16px; cursor: pointer; }
+.listing-card:hover { border-color: var(--muted); }
+.price { font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Map */
+.map { position: relative; border-radius: var(--r); overflow: hidden; border: 1px solid var(--line); background: var(--sunk); }
+.map svg { display: block; width: 100%; height: auto; max-width: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px; }
+.cat { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); background: transparent; cursor: pointer; font-size: .8rem; font-weight: 500; color: var(--fg); }
+.cat i { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-family: var(--font-mono); font-size: .65rem; font-weight: 600; color: var(--on-accent); background: var(--c); }
+.cat[aria-pressed="false"] { opacity: .45; }
+.cat[aria-pressed="false"] i { background: var(--muted); }
+
+/* Bill review */
+.bill-paper { background: #FFFFFF; color: #1F1F1F; border-radius: 8px; padding: 18px; font-size: .78rem; line-height: 1.45; border: 1px solid var(--line); }
+.bill-paper .hl { background: rgba(241,250,140,.55); border-radius: 3px; padding: 0 2px; }
+.bill-paper .hdr { display: flex; justify-content: space-between; border-bottom: 2px solid #1F1F1F; padding-bottom: 8px; margin-bottom: 10px; font-weight: 700; }
+.bill-paper table { font-size: .76rem; }
+.bill-paper td, .bill-paper th { padding: 4px 4px; border-color: #ddd; color: #1F1F1F; }
+.conf { display: inline-flex; gap: 2px; }
+.conf b { width: 5px; height: 12px; border-radius: 2px; background: var(--line); }
+.conf.hi b { background: var(--green); } .conf.md b:nth-child(-n+2) { background: var(--yellow); } .conf.lo b:first-child { background: var(--red); }
+.fieldrow { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; padding: 10px 16px; }
+.fieldrow .v { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.fieldrow.confirmed .v::after { content: "  ✓"; color: var(--green); }
+.check { display: flex; gap: 10px; align-items: flex-start; padding: 10px 16px; cursor: pointer; }
+.check input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--purple); }
+
+/* Calc */
+.calc { display: grid; gap: 0; font-size: .9rem; }
+.calc .ln { display: grid; grid-template-columns: 1fr auto; gap: 12px; padding: 9px 16px; border-top: 1px solid var(--line); }
+.calc .ln:first-child { border-top: 0; }
+.calc .ln.total { font-weight: 700; background: color-mix(in srgb, var(--green) 10%, transparent); }
+.calc .ln .op { color: var(--muted); font-size: .82rem; }
+
+.countdown { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 12px; background: var(--sunk); border: 1px solid var(--line); flex: none; }
+.countdown b { font-family: var(--font-mono); font-size: 1.35rem; line-height: 1; }
+.countdown span { font-size: .65rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+
+/* Week */
+.week { display: grid; gap: 10px; grid-template-columns: 1fr; }
+@media (min-width: 1024px) { .week { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; } }
+.day { display: grid; gap: 6px; align-content: start; padding: 10px; min-height: 0; }
+@media (min-width: 1024px) { .day { min-height: 220px; } }
+.day.today { border-color: var(--purple); }
+.day .dh { display: flex; justify-content: space-between; align-items: baseline; font-size: .8rem; }
+.ev { font-size: .8rem; padding: 6px 8px; border-radius: 6px; background: var(--sunk); border-left: 3px solid var(--c, var(--line)); min-width: 0; overflow-wrap: anywhere; }
+.ev .t { font-family: var(--font-mono); font-size: .72rem; color: var(--muted); }
+.avatar { width: 22px; height: 22px; border-radius: 50%; display: inline-grid; place-items: center; font-size: .65rem; font-weight: 700; background: var(--sunk); border: 1px solid var(--line); flex: none; }
+
+/* Trips */
+.trips { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media (min-width: 900px) { .trips { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.trip { display: grid; gap: 12px; padding: 16px; align-content: start; }
+.trip .big { font-family: var(--font-mono); font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.comp { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; font-size: .84rem; padding: 7px 0; border-top: 1px dashed var(--line); }
+.rank { font-family: var(--font-mono); font-size: .75rem; color: var(--muted); }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--nav-h) + 16px + env(safe-area-inset-bottom, 0px)); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: .88rem; z-index: 20; box-shadow: 0 6px 20px rgba(0,0,0,.25); max-width: calc(100% - 32px); }
+@media (min-width: 1024px) { .toast { bottom: 24px; } }
+
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+.seg button { padding: 7px 12px; background: transparent; border: 0; cursor: pointer; font-weight: 600; font-size: .85rem; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--purple); color: var(--on-accent); }
+
+.switch { width: 40px; height: 24px; border-radius: 999px; background: var(--line); border: 0; position: relative; cursor: pointer; flex: none; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--fg); transition: transform .15s; }
+.switch[aria-checked="true"] { background: var(--green); }
+.switch[aria-checked="true"]::after { transform: translateX(16px); background: var(--on-accent); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="app">
+  <aside class="sidebar" aria-label="Main navigation" id="sidebar"></aside>
+  <div style="min-width:0">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">C</span>Caddy</div>
+      <span class="sample-pill">Prototype · sample data</span>
+      <span class="spacer"></span>
+      <button class="icon-btn" id="tb-inbox" aria-label="Inbox, 3 unread"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="dot"></span></button>
+    </header>
+    <main id="main" tabindex="-1"><div class="page" id="page"></div></main>
+  </div>
+  <nav class="bottomnav" id="bottomnav" aria-label="Main navigation"></nav>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------- Icons ---------------- */
+  const P = {
+    home: '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>',
+    building: '<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1M9 15h1M14 15h1M10 21v-3h4v3"/>',
+    wallet: '<path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/><path d="M21 8h-5a3 3 0 0 0 0 6h5z"/>',
+    users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/>',
+    more: '<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
+    plane: '<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
+    bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+    file: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
+    receipt: '<path d="M5 3v18l2-1.5L9 21l2-1.5L13 21l2-1.5L17 21l2-1.5V3l-2 1.5L15 3l-2 1.5L11 3 9 4.5 7 3z"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+    bolt: '<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
+    school: '<path d="m2 9 10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/>',
+    upload: '<path d="M12 16V4M7 9l5-5 5 5"/><path d="M20 16v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3"/>',
+    ext: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+    back: '<path d="M15 18l-6-6 6-6"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    share: '<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4M12 2v13"/>',
+    download: '<path d="M12 4v12M7 11l5 5 5-5"/><path d="M4 20h16"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>'
+  };
+  const ic = (n, s) => '<svg ' + (s ? 'width="' + s + '" height="' + s + '" ' : '') + 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + P[n] + '</svg>';
+
+  /* ---------------- Helpers ---------------- */
+  const eur = new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" });
+  const eur0 = new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+  const money = (v, whole) => (whole ? eur0 : eur).format(v);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem("caddy-proto:" + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem("caddy-proto:" + k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } }
+  };
+  let toastTimer;
+  function toast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2200);
+  }
+
+  /* ---------------- Sample data (all fictional) ---------------- */
+  const TODAY = "Tue 20 Oct 2026";
+  const listings = [
+    { id: "riverside", name: "Riverside Quarter", area: "Castletroy, Co. Limerick", county: "Limerick", provider: "Clúid Housing", status: "open", closes: "6 Nov", daysLeft: 17, firstSeen: "Today", isNew: true, applied: "Not applied",
+      units: [{ t: "2 bed apartment", b: 2, type: "Apartment", rent: 1240, n: 18, m: false }, { t: "3 bed house", b: 3, type: "House", rent: 1495, n: 12, m: true }, { t: "4 bed house", b: 4, type: "House", rent: 1720, n: 4, m: true }] },
+    { id: "shannonbank", name: "Shannon Bank", area: "Corbally, Limerick City", county: "Limerick", provider: "Limerick City & County Council", status: "open", closes: "2 Nov", daysLeft: 13, firstSeen: "Today", isNew: true, applied: "Not applied",
+      units: [{ t: "1 bed apartment", b: 1, type: "Apartment", rent: 980, n: 10, m: false }, { t: "4 bed duplex", b: 4, type: "Duplex", rent: 1650, n: 6, m: true }] },
+    { id: "millrace", name: "Millrace Court", area: "Annacotty, Co. Limerick", county: "Limerick", provider: "Tuath Housing", status: "closing", closes: "24 Oct", daysLeft: 4, firstSeen: "2 Oct", applied: "Applied",
+      units: [{ t: "3 bed house", b: 3, type: "House", rent: 1450, n: 8, m: true }] },
+    { id: "oakfield", name: "Oakfield Green", area: "Ballincollig, Co. Cork", county: "Cork", provider: "Respond", status: "open", closes: "14 Nov", daysLeft: 25, firstSeen: "16 Oct", applied: "Not applied",
+      units: [{ t: "3 bed house", b: 3, type: "House", rent: 1530, n: 14, m: true }, { t: "3 bed apartment", b: 3, type: "Apartment", rent: 1390, n: 6, m: false }] },
+    { id: "quarry", name: "The Quarry Fields", area: "Ennis, Co. Clare", county: "Clare", provider: "Co-operative Housing Ireland", status: "unknown", closes: "Not stated", daysLeft: null, firstSeen: "18 Oct", applied: "Not applied",
+      units: [{ t: "3 bed home", b: 3, type: "Unknown", rent: null, n: null, m: "possible" }] },
+    { id: "harbour", name: "Harbour View", area: "Drogheda, Co. Louth", county: "Louth", provider: "Clúid Housing", status: "open", closes: "29 Oct", daysLeft: 9, firstSeen: "9 Oct", applied: "Not applied",
+      units: [{ t: "4 bed house", b: 4, type: "House", rent: 1810, n: 3, m: true }] },
+    { id: "elmbrook", name: "Elm Brook", area: "Raheen, Co. Limerick", county: "Limerick", provider: "Tuath Housing", status: "closed", closes: "12 Oct", daysLeft: -8, firstSeen: "21 Sep", applied: "Lottery entered",
+      units: [{ t: "3 bed house", b: 3, type: "House", rent: 1420, n: 10, m: true }] },
+    { id: "kilbarry", name: "Kilbarry Rise", area: "Waterford City", county: "Waterford", provider: "LDA", status: "closed", closes: "30 Sep", daysLeft: -20, firstSeen: "1 Sep", applied: "Unsuccessful",
+      units: [{ t: "4 bed house", b: 4, type: "House", rent: 1680, n: 5, m: true }] }
+  ];
+  const statusChip = (l) => {
+    if (l.status === "open") return '<span class="chip c-green">Open · closes ' + esc(l.closes) + "</span>";
+    if (l.status === "closing") return '<span class="chip c-orange">Closes in ' + l.daysLeft + " days</span>";
+    if (l.status === "closed") return '<span class="chip c-red">Closed ' + esc(l.closes) + "</span>";
+    return '<span class="chip c-yellow">Deadline not stated</span>';
+  };
+  const appChip = (a) => {
+    const map = { "Not applied": "c-muted", "Applied": "c-purple", "Lottery entered": "c-cyan", "Unsuccessful": "c-muted", "Offered": "c-green" };
+    return '<span class="chip plain ' + (map[a] || "c-muted") + '">' + esc(a) + "</span>";
+  };
+  const matchedUnits = (l) => l.units.filter((u) => u.m);
+  const fromRent = (l) => { const r = matchedUnits(l).map((u) => u.rent).filter(Boolean); return r.length ? Math.min.apply(null, r) : null; };
+  const matchSummary = (l) => matchedUnits(l).map((u) => u.m === "possible" ? "3 bed, type unknown" : u.b + " bed " + u.type.toLowerCase()).join(" · ");
+
+  const CATS = [
+    { k: "childcare", label: "Childcare / ECCE", g: "C", c: "var(--cyan)" },
+    { k: "primary", label: "Primary", g: "P", c: "var(--green)" },
+    { k: "secondary", label: "Secondary", g: "S", c: "var(--orange)" },
+    { k: "higher", label: "Further & higher ed", g: "U", c: "var(--purple)" },
+    { k: "bus", label: "Bus stops", g: "B", c: "var(--yellow)" },
+    { k: "mosque", label: "Mosques", g: "M", c: "var(--pink)" },
+    { k: "halal", label: "Halal food", g: "H", c: "var(--red)" }
+  ];
+  const places = [
+    { cat: "childcare", name: "Little Acorns Community Childcare", d: 0.4, src: "official", note: "ECCE · Tusla registered", x: 205, y: 120 },
+    { cat: "childcare", name: "Riverside Montessori", d: 0.9, src: "osm", note: "ECCE", x: 120, y: 85 },
+    { cat: "primary", name: "Scoil Mhuire Primary School", d: 0.6, src: "official", note: "Co-ed · 412 pupils", x: 250, y: 160 },
+    { cat: "primary", name: "Castle Educate Together NS", d: 1.3, src: "official", note: "Multi-denominational", x: 90, y: 175 },
+    { cat: "secondary", name: "Castletroy Community College", d: 1.1, src: "official", note: "Co-ed post-primary", x: 300, y: 70 },
+    { cat: "secondary", name: "St. Brigid's Secondary", d: 2.4, src: "official", note: "Girls post-primary", x: 40, y: 50 },
+    { cat: "higher", name: "Shannon Valley University", d: 1.8, src: "osm", note: "University", x: 330, y: 190 },
+    { cat: "higher", name: "Limerick College of Further Education", d: 4.6, src: "osm", note: "FET / PLC", x: 20, y: 205 },
+    { cat: "bus", name: "Riverside Rd (stop 7104)", d: 0.15, src: "official", note: "Routes 304, 304A", x: 185, y: 140 },
+    { cat: "bus", name: "College Gate (stop 7110)", d: 0.45, src: "official", note: "Route 323", x: 230, y: 95 },
+    { cat: "mosque", name: "Castletroy Islamic Centre", d: 1.6, src: "osm", note: "Jumu'ah 13:15", x: 140, y: 30 },
+    { cat: "mosque", name: "Limerick Central Mosque", d: 5.2, src: "osm", note: "", x: 15, y: 120 },
+    { cat: "halal", name: "Al-Noor Grill", d: 1.2, src: "you", note: "Added by you · certified halal", x: 270, y: 210 },
+    { cat: "halal", name: "Spice Route Kitchen", d: 2.0, src: "google", note: "Halal options · 4.5★", x: 60, y: 140 },
+    { cat: "halal", name: "Bosphorus Kebab", d: 2.9, src: "osm", note: "diet:halal=yes", x: 330, y: 20 }
+  ];
+  const srcTag = (s) => ({ official: '<span class="tag official">Official</span>', osm: '<span class="tag">OSM</span>', google: '<span class="tag">Google</span>', you: '<span class="tag you">You</span>' }[s]);
+  const walk = (km) => Math.max(1, Math.round(km * 1.3 / 5 * 60));
+
+  /* ---------------- State ---------------- */
+  const state = {
+    filter: "matches",
+    listing: "riverside",
+    ltab: "nearby",
+    cats: new Set(CATS.map((c) => c.k)),
+    money: "bills",
+    confirmed: new Set(["supplier", "account"]),
+    theme: store.get("theme", "system"),
+    lists: { milk: false, eggs: true, rice: false, nappies: false, binbags: false, bulbs: false }
+  };
+
+  /* ---------------- Navigation ---------------- */
+  const NAV = [
+    { id: "today", label: "Today", icon: "home" },
+    { id: "housing", label: "Housing", icon: "building", count: 6 },
+    { id: "money", label: "Money", icon: "wallet", count: 1 },
+    { id: "family", label: "Family", icon: "users" },
+    { id: "travel", label: "Travel", icon: "plane" },
+    { id: "inbox", label: "Inbox", icon: "bell", count: 3 },
+    { id: "prefs", label: "Settings", icon: "gear" }
+  ];
+  const SECTION_OF = { listing: "housing", bill: "money" };
+  let current = "today";
+
+  function renderNav() {
+    const sec = SECTION_OF[current] || current;
+    const side = ['<div class="brand"><span class="brand-mark">C</span>Caddy</div>'];
+    NAV.forEach((n, i) => {
+      if (i === 5) side.push('<div class="label group">You</div>');
+      side.push('<button class="navlink" data-go="' + n.id + '"' + (sec === n.id ? ' aria-current="page"' : "") + ">" + ic(n.icon) + "<span>" + n.label + "</span>" + (n.count ? '<span class="count">' + n.count + "</span>" : "") + "</button>");
+    });
+    side.push('<div class="foot"><span class="sample-pill" style="justify-self:start">Prototype · sample data</span><span class="small muted">Signed in as Sam · Household of 4</span></div>');
+    document.getElementById("sidebar").innerHTML = side.join("");
+    const bottom = [["today", "Today", "home"], ["housing", "Housing", "building"], ["money", "Money", "wallet"], ["family", "Family", "users"], ["more", "More", "more"]];
+    const moreActive = ["travel", "prefs", "inbox", "more"].includes(sec);
+    document.getElementById("bottomnav").innerHTML = bottom.map(([id, label, icon]) => {
+      const active = id === "more" ? moreActive : sec === id;
+      return '<button data-go="' + id + '"' + (active ? ' aria-current="page"' : "") + ">" + ic(icon) + "<span>" + label + "</span></button>";
+    }).join("");
+  }
+
+  function go(id, opts) {
+    if (opts) Object.assign(state, opts);
+    current = id;
+    try { if (location.hash !== "#" + id) history.replaceState(null, "", "#" + id); } catch (e) { /* hash not writable */ }
+    render();
+    window.scrollTo(0, 0);
+    const m = document.getElementById("main"); if (m) m.focus({ preventScroll: true });
+  }
+
+  /* ---------------- Screens ---------------- */
+  const screens = {};
+
+  screens.today = () => {
+    const newOnes = listings.filter((l) => l.isNew);
+    return [
+      '<div class="row between"><div><div class="label">' + TODAY + '</div><h1>Good morning, Sam</h1></div>',
+      '<button class="btn" data-go="inbox">' + ic("bell") + "Inbox · 3</button></div>",
+      '<div class="health" aria-label="Background checks">',
+      '<div class="h"><span class="chip c-green">OK</span>Housing check 07:14 · 38 listings · 3 pages</div>',
+      '<div class="h"><span class="chip c-green">OK</span>Housing news 06:52 · 4 items</div>',
+      '<div class="h"><span class="chip c-green">OK</span>Reminders 07:20</div>',
+      '<div class="h"><span class="chip c-green">OK</span>Backup 02:05</div>',
+      "</div>",
+
+      '<section class="card"><div class="pad" style="padding-bottom:6px"><h2>Needs you</h2></div><div class="list">',
+      needRow("var(--green)", "2 new homes match", "Riverside Quarter, Shannon Bank · both in Limerick", "housing", "Review"),
+      needRow("var(--orange)", "Millrace Court closes in 4 days", "You applied on 3 Oct · check your lottery email", "listing", "Open", "millrace"),
+      needRow("var(--orange)", "Electricity comparison due today", "Electric Ireland contract ends 3 Nov · 14-day check", "money", "Compare", null, "utilities"),
+      needRow("var(--yellow)", "1 bill to review", "Electric Ireland · Sep 2026 · 9 proposed fields", "bill", "Review"),
+      "</div></section>",
+
+      '<div class="grid-2">',
+      '<section><div class="section-head"><h2>New today</h2><button class="linkbtn" data-go="housing">All listings</button></div><div class="stack">',
+      newOnes.map(listingCard).join(""),
+      "</div></section>",
+
+      '<section class="stack">',
+      '<div><div class="section-head"><h2>This week</h2><button class="linkbtn" data-go="family">Week view</button></div>',
+      '<div class="card list">',
+      weekRow("Today", "17:30", "Swimming · Rowan", "var(--cyan)"),
+      weekRow("Thu", "18:00", "Parent–teacher meeting", "var(--orange)", "Clashes with dentist 18:15"),
+      weekRow("Fri", "13:15", "Jumu'ah", "var(--pink)"),
+      weekRow("Sat", "—", "Book NCT for the car", "var(--purple)"),
+      "</div></div>",
+      '<div><div class="section-head"><h2>Money</h2><button class="linkbtn" data-go="money">Open</button></div>',
+      '<div class="card pad stack">',
+      '<div class="row between"><span>WFH relief 2026 (estimate)</span><span class="price">' + money(380.58) + '</span></div>',
+      '<div class="row between"><span>Gas contract ends</span><span class="num">14 Mar 2027</span></div>',
+      '<div class="row between"><span>Bills this month</span><span class="price">' + money(318.2) + "</span></div>",
+      "</div></div>",
+      "</section>",
+      "</div>"
+    ].join("");
+  };
+  function needRow(color, title, sub, target, action, listingId, moneyTab) {
+    const extra = (listingId ? ' data-listing="' + listingId + '"' : "") + (moneyTab ? ' data-money="' + moneyTab + '"' : "");
+    return '<div class="item clickable" data-go="' + target + '"' + extra + ' role="button" tabindex="0"><span class="stripe" style="--c:' + color + '"></span><div class="grow"><div class="title">' + title + '</div><div class="small muted">' + sub + '</div></div><span class="linkbtn">' + action + " →</span></div>";
+  }
+  function weekRow(day, time, title, color, warn) {
+    return '<div class="item"><span class="stripe" style="--c:' + color + '"></span><div class="grow"><div class="title">' + title + "</div>" + (warn ? '<div class="small" style="color:var(--orange)">⚠ ' + warn + "</div>" : "") + '</div><div class="small muted" style="text-align:right"><div>' + day + '</div><div class="num">' + time + "</div></div></div>";
+  }
+  function listingCard(l) {
+    const r = fromRent(l);
+    return '<article class="card listing-card" data-go="listing" data-listing="' + l.id + '" role="button" tabindex="0">' +
+      '<div class="row between"><div style="min-width:0"><h3>' + esc(l.name) + (l.isNew ? ' <span class="chip c-green plain" style="margin-left:4px">New</span>' : "") + '</h3><div class="small muted">' + esc(l.area) + " · " + esc(l.provider) + "</div></div>" +
+      (r ? '<div style="text-align:right"><div class="price">' + money(r, true) + '</div><div class="small muted">/month from</div></div>' : '<div class="small muted">Rent not stated</div>') + "</div>" +
+      '<div class="row">' + statusChip(l) + appChip(l.applied) + '<span class="small muted">' + esc(matchSummary(l)) + "</span></div></article>";
+  }
+
+  screens.housing = () => {
+    const f = state.filter;
+    const sets = {
+      matches: listings.filter((l) => l.status !== "closed"),
+      closing: listings.filter((l) => l.status === "closing" || (l.daysLeft !== null && l.daysLeft >= 0 && l.daysLeft <= 10)),
+      applied: listings.filter((l) => l.applied !== "Not applied"),
+      closed: listings.filter((l) => l.status === "closed")
+    };
+    const rows = sets[f];
+    const fl = [["matches", "Open matches"], ["closing", "Closing soon"], ["applied", "Applied"], ["closed", "Closed"]];
+    return [
+      '<div class="row between"><div><div class="label">Cost Rental Watch</div><h1>Housing</h1></div><button class="btn" data-toast="Pipeline view comes in task 1.8">Limerick pipeline</button></div>',
+      '<div class="fresh"><span class="chip c-green">Checked today 07:14</span><span>newstarterhomes.ie · 3 pages · 38 listings checked · 6 match</span><a href="https://newstarterhomes.ie/rent/" target="_blank" rel="noopener">Source ' + ic("ext", 12) + "</a></div>",
+      '<div class="note">Matching: every 3-bed house and every 4-bed home of any type. Listings with an unknown property type show as possible matches so nothing is silently dropped.</div>',
+      '<div class="filters" role="group" aria-label="Filter listings">' + fl.map(([k, l]) => '<button class="filter" data-filter="' + k + '" aria-pressed="' + (f === k) + '">' + l + '<span class="n">' + sets[k].length + "</span></button>").join("") + "</div>",
+      '<div class="only-phone stack">' + rows.map(listingCard).join("") + "</div>",
+      '<div class="only-desk card table-wrap"><table><thead><tr><th>Development</th><th>Area</th><th>Matching homes</th><th class="r">Rent from</th><th>Status</th><th>First seen</th><th>Your application</th></tr></thead><tbody>' +
+      rows.map((l) => { const r = fromRent(l); return '<tr class="clickable" data-go="listing" data-listing="' + l.id + '"><td><strong>' + esc(l.name) + "</strong>" + (l.isNew ? ' <span class="chip c-green plain">New</span>' : "") + '<div class="small muted">' + esc(l.provider) + "</div></td><td>" + esc(l.area) + "</td><td>" + esc(matchSummary(l)) + '</td><td class="r price">' + (r ? money(r, true) : '<span class="muted">—</span>') + "</td><td>" + statusChip(l) + '</td><td class="num">' + esc(l.firstSeen) + "</td><td>" + appChip(l.applied) + "</td></tr>"; }).join("") +
+      "</tbody></table></div>"
+    ].join("");
+  };
+
+  screens.listing = () => {
+    const l = listings.find((x) => x.id === state.listing) || listings[0];
+    const tabs = [["overview", "Overview"], ["nearby", "Nearby"], ["history", "History"], ["application", "Application"]];
+    const body = { overview: listingOverview, nearby: listingNearby, history: listingHistory, application: listingApplication }[state.ltab](l);
+    return [
+      '<button class="linkbtn row" data-go="housing" style="gap:4px">' + ic("back", 16) + "Housing</button>",
+      '<div class="stack" style="gap:8px"><div class="row between"><div style="min-width:0"><h1>' + esc(l.name) + '</h1><div class="muted">' + esc(l.area) + " · " + esc(l.provider) + '</div></div><a class="btn" href="https://newstarterhomes.ie/rent/" target="_blank" rel="noopener">' + ic("ext") + "View on site</a></div>",
+      '<div class="row">' + statusChip(l) + appChip(l.applied) + '<span class="small muted">Last checked today 07:14 · first seen ' + esc(l.firstSeen) + "</span></div></div>",
+      '<div class="tabs" role="tablist">' + tabs.map(([k, t]) => '<button class="tab" role="tab" data-ltab="' + k + '" aria-selected="' + (state.ltab === k) + '">' + t + "</button>").join("") + "</div>",
+      body
+    ].join("");
+  };
+  function listingOverview(l) {
+    return '<div class="grid-2"><section class="card table-wrap"><table><thead><tr><th>Home type</th><th class="r">Rent / month</th><th class="r">Homes</th><th>Match</th></tr></thead><tbody>' +
+      l.units.map((u) => "<tr><td>" + esc(u.t) + '</td><td class="r price">' + (u.rent ? money(u.rent, true) : '<span class="muted">Unknown</span>') + '</td><td class="r num">' + (u.n == null ? '<span class="muted">Unknown</span>' : u.n) + "</td><td>" + (u.m === true ? '<span class="chip c-green">Match</span>' : u.m === "possible" ? '<span class="chip c-yellow">Possible</span>' : '<span class="small muted">No</span>') + "</td></tr>").join("") +
+      '</tbody></table></section><section class="card pad stack"><h2>Key facts</h2><dl class="kv">' +
+      "<dt>Deadline</dt><dd>" + esc(l.closes) + (l.daysLeft > 0 ? ' <span class="small muted">(' + l.daysLeft + " days)</span>" : "") + ' <span class="tag official">Provider</span></dd>' +
+      "<dt>Provider</dt><dd>" + esc(l.provider) + "</dd>" +
+      '<dt>Cost Rental</dt><dd><span class="chip c-green">Confirmed</span> <span class="tag official">Provider</span></dd>' +
+      '<dt>Income limit</dt><dd><span class="muted">Not stated on listing</span></dd>' +
+      '<dt>Bus to city</dt><dd>~25 min <span class="tag estimate">Estimate</span></dd>' +
+      '</dl><div class="note">Unknown values stay unknown until the provider publishes them.</div><button class="btn" data-toast="Task created: Apply to ' + esc(l.name) + ' by ' + esc(l.closes) + '">' + ic("plus") + "Create task from deadline</button></section></div>";
+  }
+  function listingNearby() {
+    const visible = places.filter((p) => state.cats.has(p.cat));
+    const catOf = (k) => CATS.find((c) => c.k === k);
+    const pins = visible.map((p) => { const c = catOf(p.cat); return '<g><circle cx="' + p.x + '" cy="' + p.y + '" r="9" style="fill:' + c.c + '"/><text x="' + p.x + '" y="' + (p.y + 3.5) + '" text-anchor="middle" font-size="9" font-family="JetBrains Mono, monospace" font-weight="600" style="fill:var(--on-accent)">' + c.g + "</text><title>" + esc(p.name) + "</title></g>"; }).join("");
+    const map = '<div class="map"><svg viewBox="0 0 360 240" role="img" aria-label="Schematic map of places near the listing">' +
+      '<rect width="360" height="240" style="fill:var(--sunk)"/>' +
+      '<path d="M0 158 C 80 150, 140 190, 360 170" fill="none" style="stroke:var(--cyan);opacity:.35" stroke-width="16"/>' +
+      '<g fill="none" style="stroke:var(--line)" stroke-width="3"><path d="M0 100 H360"/><path d="M180 0 V240"/><path d="M40 0 L 300 240"/><path d="M0 210 Q 180 200 360 120"/></g>' +
+      '<circle cx="180" cy="120" r="70" fill="none" style="stroke:var(--muted)" stroke-dasharray="3 4" opacity=".5"/>' +
+      pins +
+      '<g><circle cx="180" cy="120" r="13" style="fill:var(--purple)"/><path d="M174 122 l6 -6 l6 6 v5 h-12 z" style="fill:var(--on-accent)"/></g>' +
+      '<text x="184" y="56" font-size="8" style="fill:var(--muted)" font-family="JetBrains Mono, monospace">1 km</text>' +
+      "</svg></div>";
+    const legend = '<div class="legend" role="group" aria-label="Show categories">' + CATS.map((c) => '<button class="cat" data-cat="' + c.k + '" aria-pressed="' + state.cats.has(c.k) + '" style="--c:' + c.c + '"><i>' + c.g + "</i>" + c.label + "</button>").join("") + "</div>";
+    const groups = CATS.filter((c) => state.cats.has(c.k)).map((c) => {
+      const items = places.filter((p) => p.cat === c.k).sort((a, b) => a.d - b.d);
+      return '<section class="card"><div class="pad row between" style="padding-bottom:8px"><h3 class="row" style="gap:8px"><span class="cat" style="--c:' + c.c + ';border:0;padding:0;cursor:default"><i>' + c.g + "</i></span>" + c.label + '</h3><span class="small muted">' + items.length + " nearby</span></div><div class=\"list\">" +
+        items.map((p) => '<div class="item"><div class="grow"><div class="title">' + esc(p.name) + '</div><div class="small muted">' + esc(p.note || "") + '</div></div><div style="text-align:right;display:grid;gap:3px;justify-items:end"><span class="num">' + p.d.toFixed(1) + ' km</span><span class="small muted">~' + walk(p.d) + " min walk</span>" + srcTag(p.src) + "</div></div>").join("") +
+        "</div></section>";
+    }).join("");
+    return '<div class="grid-2"><div class="stack">' + map + legend + '<div class="note">Straight-line distances with walking estimates. Being near a school does not guarantee a place. Sources: Department of Education and Tusla lists, OpenStreetMap, Google (optional), and places you add.</div><button class="btn" data-toast="Add a place: search or drop a pin (built in task 1.7)">' + ic("plus") + "Add a place you know</button></div><div class=\"stack\">" + groups + "</div></div>";
+  }
+  function listingHistory() {
+    const ev = [
+      ["Today 07:14", "Checked · no changes", "var(--line)"],
+      ["18 Oct", "Application deadline published: 6 Nov", "var(--orange)"],
+      ["16 Oct", "4 bed house rent changed €1,780 → €1,720", "var(--yellow)"],
+      ["14 Oct", "Unit mix updated: 4 bed homes 3 → 4", "var(--yellow)"],
+      ["12 Oct", "First seen on newstarterhomes.ie", "var(--green)"]
+    ];
+    return '<section class="card list">' + ev.map(([d, t, c]) => '<div class="item"><span class="stripe" style="--c:' + c + '"></span><div class="grow">' + esc(t) + '</div><span class="num small muted">' + d + "</span></div>").join("") + '</section><div class="note">Every daily check is kept, including when a listing closes. Closed listings never disappear.</div>';
+  }
+  function listingApplication(l) {
+    const opts = ["Not applied", "Applied", "Lottery entered", "Offered", "Declined", "Unsuccessful"];
+    return '<div class="grid-2"><section class="card pad stack"><h2>Your application</h2>' +
+      '<div class="field"><label for="app-status">Status</label><select id="app-status" class="input">' + opts.map((o) => "<option" + (o === l.applied ? " selected" : "") + ">" + o + "</option>").join("") + "</select></div>" +
+      '<div class="field"><label for="app-date">Applied on</label><input id="app-date" class="input" type="date" value="' + (l.applied === "Not applied" ? "" : "2026-10-03") + '"></div>' +
+      '<div class="field"><label for="app-outcome">Outcome, exactly as the provider wrote it</label><textarea id="app-outcome" class="input" placeholder="Paste the wording from the email or letter"></textarea></div>' +
+      '<div class="field"><label for="app-next">Next action</label><input id="app-next" class="input" value="Gather 2 payslips + P60 for income check"></div>' +
+      '<div class="row"><button class="btn primary" data-toast="Saved. Daily checks never change this section.">Save</button><button class="btn" data-toast="Link a document (built in R2)">' + ic("file") + "Link document</button></div></section>" +
+      '<section class="card pad stack"><h2>Provider status</h2><dl class="kv"><dt>Listing status</dt><dd>' + statusChip(l) + '</dd><dt>Lottery</dt><dd><span class="muted">Not announced</span></dd></dl><div class="note">This side comes from the website. Your side is never overwritten by the daily check.</div></section></div>';
+  }
+
+  /* Money */
+  screens.money = () => {
+    const tabs = [["bills", "Bills"], ["tax", "Tax 2026"], ["utilities", "Utilities"]];
+    const body = { bills: moneyBills, tax: moneyTax, utilities: moneyUtilities }[state.money]();
+    return '<div class="row between"><div><div class="label">Bills · tax evidence · contracts</div><h1>Money</h1></div><button class="btn primary" data-toast="Choose a PDF or take a photo">' + ic("upload") + "Add bill</button></div>" +
+      '<div class="tabs" role="tablist">' + tabs.map(([k, t]) => '<button class="tab" role="tab" data-money="' + k + '" aria-selected="' + (state.money === k) + '">' + t + "</button>").join("") + "</div>" + body;
+  };
+  function moneyBills() {
+    const docs = [
+      ["Electric Ireland", "Sep 2026 · electricity", 212.48, '<span class="chip c-yellow">To review</span>', true],
+      ["Flogas", "Sep 2026 · gas", 96.3, '<span class="chip c-green">Confirmed</span>'],
+      ["Eir", "Oct 2026 · broadband", 45.0, '<span class="chip c-green">Confirmed</span>'],
+      ["Electric Ireland", "Aug 2026 · electricity", 188.92, '<span class="chip c-green">Confirmed</span>'],
+      ["Tesco", "Receipt · 14 Oct", 64.15, '<span class="chip c-cyan">Reading…</span>']
+    ];
+    return '<section class="card list">' + docs.map(([s, p, a, chip, rv]) => '<div class="item' + (rv ? ' clickable" data-go="bill" role="button" tabindex="0' : "") + '"><span class="stripe" style="--c:' + (rv ? "var(--yellow)" : "var(--line)") + '"></span><div class="grow"><div class="title">' + s + '</div><div class="small muted">' + p + '</div></div><span class="price">' + money(a) + "</span>" + chip + "</div>").join("") + "</section>" +
+      '<div class="note">Each file is stored once, privately. One bill can feed household spending, the utility comparison and tax evidence without being copied.</div>';
+  }
+  function moneyTax() {
+    const elec = 1486.2, gas = 1102.4, bb = 540, days = 148, yr = 365, allowance = 0;
+    const total = elec + gas + bb, share = total * days / yr, base = share - allowance, claim = base * 0.3, back = claim * 0.4;
+    return '<div class="grid-2"><section class="card"><div class="pad stack" style="gap:4px"><h2>Remote working relief · Sam</h2><div class="small muted">Rule IE-WFH v1 (2022 onwards) · <a href="https://revenue.ie/en/jobs-and-pensions/eworking/calculate-allowable-remote-working-costs.aspx" target="_blank" rel="noopener">Revenue guidance</a> · checked 20 Oct 2026</div></div><div class="calc">' +
+      ln("Electricity (10 bills)", money(elec)) + ln("Heating · gas (5 bills)", money(gas)) + ln("Broadband (12 bills)", money(bb)) +
+      ln("Total allowable bills", money(total), "A") +
+      ln("× days worked from home ÷ days in year", days + " ÷ " + yr, "B ÷ C") +
+      ln("Share of bills for WFH", money(share)) +
+      ln("− Employer allowance paid", money(allowance), "D") +
+      ln("× 30%", money(claim), "", true) +
+      '</div><div class="pad stack"><div class="row between"><span>Estimated tax back at 40%</span><span class="price">' + money(back) + ' <span class="tag estimate">Estimate</span></span></div><div class="note">Caddy organises evidence and estimates. It never files a claim. Check figures in Revenue myAccount before claiming.</div><div class="row"><button class="btn" data-toast="CSV export of 27 evidence items">' + ic("download") + 'Export CSV</button><button class="btn" data-toast="Year summary prepared">Year summary</button></div></div></section>' +
+      '<section class="stack"><div class="card pad stack"><h2>Evidence checklist</h2>' +
+      chk(true, "Electricity bills Jan–Oct", "10 of 10 so far") + chk(true, "Broadband bills", "12 months") + chk(false, "Gas bills May–Sep", "Missing 1 · July", "var(--orange)") + chk(false, "WFH days for Alex", "Not entered", "var(--yellow)") +
+      '</div><div class="card pad stack"><h2>Working-from-home days</h2><div class="row between"><span>Sam</span><span class="num">148 days</span></div><div class="row between"><span>Alex</span><span class="muted">Not entered</span></div><button class="btn" data-toast="Enter days per month">Update days</button></div></section></div>';
+  }
+  function ln(label, val, op, total) { return '<div class="ln' + (total ? " total" : "") + '"><span>' + label + (op ? ' <span class="op mono">' + op + "</span>" : "") + '</span><span class="num">' + val + "</span></div>"; }
+  function chk(ok, t, s, c) { return '<div class="row" style="gap:12px;flex-wrap:nowrap"><span class="chip ' + (ok ? "c-green" : "") + '" style="' + (c ? "--c:" + c : "") + '">' + (ok ? "Done" : "Missing") + '</span><div style="min-width:0"><div>' + t + '</div><div class="small muted">' + s + "</div></div></div>"; }
+
+  function moneyUtilities() {
+    const usage = { day: 4920, night: 3410, peak: 610 };
+    const offers = [
+      { s: "Electric Ireland", t: "Your renewal price", day: .3712, night: .1985, peak: .4210, stand: 302, disc: 0, cash: 0, current: true },
+      { s: "Energia", t: "Smart time-of-use", day: .3420, night: .1710, peak: .3990, stand: 280, disc: .22, cash: 0 },
+      { s: "SSE Airtricity", t: "Smart time-of-use", day: .3510, night: .1650, peak: .4100, stand: 265, disc: .18, cash: 100 },
+      { s: "Flogas", t: "Smart time-of-use", day: .3380, night: .1890, peak: .3890, stand: 295, disc: .15, cash: 0 },
+      { s: "Pinergy", t: "Smart time-of-use", day: .3290, night: .1790, peak: .3790, stand: 310, disc: 0, cash: 0 }
+    ];
+    const VAT = 1.09;
+    offers.forEach((o) => {
+      const units = usage.day * o.day + usage.night * o.night + usage.peak * o.peak;
+      o.y1 = (units * (1 - o.disc) + o.stand) * VAT - o.cash;
+      o.y2 = (units + o.stand) * VAT;
+    });
+    const cur = offers.find((o) => o.current);
+    const ranked = offers.slice().sort((a, b) => a.y1 - b.y1);
+    return '<section class="card pad row" style="gap:16px;flex-wrap:nowrap"><div class="countdown"><b>14</b><span>days left</span></div><div class="grow" style="min-width:0"><h2>Electricity · Electric Ireland</h2><div class="small muted">Smart meter · time-of-use · contract ends 3 Nov 2026 · comparison was due today</div></div></section>' +
+      '<section class="card"><div class="pad row between"><div><h2>First-year cost with your usage</h2><div class="small muted">Usage from 12 confirmed bills: day <span class="num">4,920</span> · night <span class="num">3,410</span> · peak <span class="num">610</span> kWh</div></div><button class="btn" data-toast="Paste rates from bonkers.ie or switcher.ie">' + ic("plus") + 'Add offer</button></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Supplier</th><th class="r">Year 1</th><th class="r">Year 2</th><th class="r">vs renewal</th><th>Includes</th></tr></thead><tbody>' +
+      ranked.map((o, i) => { const sv = cur.y1 - o.y1; return "<tr><td class=\"rank\">" + (i + 1) + "</td><td><strong>" + o.s + "</strong>" + (o.current ? ' <span class="chip plain c-muted">Current</span>' : "") + '<div class="small muted">' + o.t + '</div></td><td class="r price">' + money(o.y1, true) + '</td><td class="r num">' + money(o.y2, true) + '</td><td class="r num" style="color:' + (sv > 1 ? "var(--green)" : "var(--muted)") + '">' + (o.current ? "—" : (sv > 0 ? "−" : "+") + money(Math.abs(sv), true)) + '</td><td class="small muted">' + (o.disc ? Math.round(o.disc * 100) + "% off units yr 1" : "No discount") + (o.cash ? " · €" + o.cash + " cashback" : "") + "</td></tr>"; }).join("") +
+      '<tr><td class="rank">—</td><td><span class="muted">Bord Gáis Energy</span></td><td colspan="4" class="small muted">Excluded by your preference</td></tr>' +
+      '</tbody></table></div><div class="pad"><div class="note">Includes standing charge and 9% VAT. PSO levy left out (same for every supplier). Offer rates entered by you from comparison sites on 20 Oct 2026 <span class="tag you">You</span>. Caddy never switches supplier for you.</div></div></section>' +
+      '<section class="card list"><div class="item"><span class="stripe" style="--c:var(--line)"></span><div class="grow"><div class="title">Gas · Flogas</div><div class="small muted">Ends 14 Mar 2027 · comparison due 28 Feb 2027</div></div><span class="num small muted">145 days</span></div><div class="item"><span class="stripe" style="--c:var(--line)"></span><div class="grow"><div class="title">Broadband · Eir</div><div class="small muted">Ends 2 Jun 2027 · comparison due 19 May 2027</div></div><span class="num small muted">225 days</span></div></section>';
+  }
+
+  screens.bill = () => {
+    const fields = [
+      ["supplier", "Supplier", "Electric Ireland", "hi"],
+      ["period", "Billing period", "1 Sep – 30 Sep 2026", "hi"],
+      ["total", "Total due", "€212.48", "hi"],
+      ["vat", "VAT (9%)", "€17.54", "md"],
+      ["day", "Day units", "412 kWh", "hi"],
+      ["night", "Night units", "288 kWh", "hi"],
+      ["peak", "Peak units", "51 kWh", "md"],
+      ["standing", "Standing charge", "€24.82", "lo"],
+      ["account", "Account", "•••• 4821", "hi"]
+    ];
+    const n = state.confirmed.size;
+    return [
+      '<button class="linkbtn row" data-go="money" style="gap:4px">' + ic("back", 16) + "Money</button>",
+      '<div class="row between"><div><div class="label">Review bill</div><h1>Electric Ireland · Sep 2026</h1></div><span class="chip c-yellow">' + (fields.length - n) + " fields to confirm</span></div>",
+      '<div class="grid-2"><section class="stack"><div class="bill-paper" aria-label="Bill preview (sample)">' +
+      '<div class="hdr"><span>electric ireland</span><span>Bill</span></div>' +
+      '<div>Account no. <span class="hl">XXXX 4821</span> · Bill date 3 Oct 2026</div><div>Billing period <span class="hl">01/09/2026 – 30/09/2026</span></div><br>' +
+      '<table><tr><th>Units</th><th>kWh</th><th>Rate</th><th>€</th></tr><tr><td>Day</td><td class="hl">412</td><td>37.12c</td><td>152.93</td></tr><tr><td>Night</td><td class="hl">288</td><td>19.85c</td><td>57.17</td></tr><tr><td>Peak</td><td class="hl">51</td><td>42.10c</td><td>21.47</td></tr><tr><td>Standing charge</td><td></td><td>30 days</td><td class="hl">24.82</td></tr><tr><td>Credit</td><td></td><td></td><td>-61.45</td></tr><tr><td>VAT 9%</td><td></td><td></td><td class="hl">17.54</td></tr><tr><th colspan="3">Total due</th><th class="hl">212.48</th></tr></table>' +
+      '</div><div class="small muted">Read from the PDF text layer · Electric Ireland parser v1 · no AI used</div></section>' +
+      '<section class="stack"><div class="card"><div class="pad row between" style="padding-bottom:6px"><h2>Proposed fields</h2><button class="linkbtn" data-confirm-all>Confirm all</button></div><div class="list">' +
+      fields.map(([k, l, v, c]) => '<div class="fieldrow' + (state.confirmed.has(k) ? " confirmed" : "") + '"><div><div class="small muted">' + l + ' <span class="conf ' + c + '" aria-label="confidence ' + c + '"><b></b><b></b><b></b></span></div><div class="v">' + v + '</div></div><button class="btn" data-confirm="' + k + '" style="min-height:34px">' + (state.confirmed.has(k) ? "Undo" : "Confirm") + "</button></div>").join("") +
+      '</div></div><div class="card"><div class="pad" style="padding-bottom:4px"><h2>Use this bill for</h2></div>' +
+      '<label class="check"><input type="checkbox" checked><span><strong>Household spending</strong><br><span class="small muted">Utilities · electricity</span></span></label>' +
+      '<label class="check"><input type="checkbox" checked><span><strong>Electricity contract</strong><br><span class="small muted">Adds September usage to the comparison</span></span></label>' +
+      '<label class="check"><input type="checkbox" checked><span><strong>Tax 2026 · remote working relief</strong><br><span class="small muted">Evidence for Sam</span></span></label>' +
+      '<div class="pad"><button class="btn primary" style="width:100%" data-save-bill>Save and link</button></div></div></section></div>'
+    ].join("");
+  };
+
+  /* Family */
+  screens.family = () => {
+    const days = [
+      ["Mon", "19", []],
+      ["Tue", "20", [["17:30", "Swimming", "Rowan", "var(--cyan)"]], true],
+      ["Wed", "21", [["08:00", "Green bin out", "Sam", "var(--green)"], ["19:00", "Football", "Rowan", "var(--cyan)"]]],
+      ["Thu", "22", [["18:00", "Parent–teacher meeting", "Sam + Alex", "var(--orange)"], ["18:15", "Dentist · Ivy", "Alex", "var(--red)", "Clash"]]],
+      ["Fri", "23", [["13:15", "Jumu'ah", "Sam", "var(--pink)"], ["—", "Millrace Court closes", "", "var(--orange)"]]],
+      ["Sat", "24", [["10:00", "Big shop", "Alex", "var(--purple)"]]],
+      ["Sun", "25", [["—", "Clocks go back", "", "var(--line)"]]]
+    ];
+    const tasks = [["Book NCT for the car", "Sam", "Sat"], ["Renew Ivy's passport", "Alex", "Nov"], ["Gather payslips for Millrace application", "Sam", "Thu"]];
+    const items = [["milk", "Milk"], ["eggs", "Eggs"], ["rice", "Basmati rice 5kg"], ["nappies", "Nappies size 5"], ["binbags", "Bin bags"], ["bulbs", "Bulbs (E27)"]];
+    const waText = encodeURIComponent("Shopping list:\n" + items.filter(([k]) => !state.lists[k]).map(([, t]) => "• " + t).join("\n"));
+    return [
+      '<div class="row between"><div><div class="label">Week of 19 Oct</div><h1>Family</h1></div><div class="row"><button class="btn" data-toast="Calendar feed link copied (works with Apple and Google Calendar)">Subscribe in calendar</button><button class="btn primary" data-toast="New event">' + ic("plus") + "Add</button></div></div>",
+      '<div class="week">' + days.map(([d, n, evs, today]) => '<div class="card day' + (today ? " today" : "") + '"><div class="dh"><strong>' + d + ' <span class="num">' + n + "</span></strong>" + (today ? '<span class="chip c-purple plain">Today</span>' : "") + "</div>" +
+        (evs.length ? evs.map(([t, title, who, c, warn]) => '<div class="ev" style="--c:' + c + '"><div class="t">' + t + (warn ? ' <span style="color:var(--orange)">⚠ ' + warn + "</span>" : "") + "</div>" + esc(title) + (who ? '<div class="small muted">' + esc(who) + "</div>" : "") + "</div>").join("") : '<div class="small muted">Nothing planned</div>') + "</div>").join("") + "</div>",
+      '<div class="grid-2"><section class="card"><div class="pad" style="padding-bottom:6px"><h2>Tasks</h2></div><div class="list">' +
+      tasks.map(([t, who, due]) => '<div class="item"><span class="avatar">' + who[0] + '</span><div class="grow">' + esc(t) + '</div><span class="small muted num">' + due + "</span></div>").join("") +
+      '</div></section><section class="card"><div class="pad row between" style="padding-bottom:6px"><h2>Shopping</h2><a class="btn" href="https://wa.me/?text=' + waText + '" target="_blank" rel="noopener">' + ic("share") + "Share to WhatsApp</a></div>" +
+      items.map(([k, t]) => '<label class="check"><input type="checkbox" data-list="' + k + '"' + (state.lists[k] ? " checked" : "") + '><span style="' + (state.lists[k] ? "text-decoration:line-through;color:var(--muted)" : "") + '">' + esc(t) + "</span></label>").join("") +
+      "</section></div>",
+      '<section class="card pad row between"><div class="row" style="gap:12px">' + ic("school", 22) + '<div><h2>School places · Junior Infants 2027</h2><div class="small muted">3 schools tracked · next: open day at Scoil Mhuire, Sat 8 Nov</div></div></div><button class="btn" data-toast="Education planner (task 4.6)">Open planner</button></section>'
+    ].join("");
+  };
+
+  /* Travel */
+  screens.travel = () => {
+    const trips = [
+      { dest: "Albufeira, Algarve", sub: "Half board · family room · 6 nights", comps: [["Flights DUB–FAO", "Ryanair · 4 pax · 2×20kg bags", 612], ["Hotel", "Family room · half board", 1764], ["Transfers", "Return shuttle", 96], ["Tourist tax", "€2 per adult per night", 24, true]], note: "Cheapest. Hotel is 3★ and 1.2 km from beach.", miss: "Excludes lunches" },
+      { dest: "Puerto de la Cruz, Tenerife", sub: "Self-catering apartment · 7 nights", comps: [["Flights DUB–TFS", "Aer Lingus · 4 pax · 2×20kg bags", 1036], ["Apartment", "2 bed · free cancellation", 980], ["Car hire", "7 days · 2 child seats", 315], ["Groceries", "Self-catering estimate", 350, true]], note: "Most flexible. Free cancellation until 1 Feb.", miss: "Excludes fuel, parking" },
+      { dest: "Lara, Antalya", sub: "All inclusive · family suite · 6 nights", comps: [["Flights DUB–AYT", "SunExpress · 4 pax · bags incl.", 1180], ["Hotel", "All inclusive · 5★", 1690], ["Transfers", "₺2,150 → € at ECB 17 Oct", 60.12]], note: "All meals included, so fewer extras. Flight is 4h 50m.", miss: "Entry: check passport validity rules" }
+    ];
+    trips.forEach((t) => { t.total = t.comps.reduce((s, c) => s + c[2], 0); });
+    trips.sort((a, b) => a.total - b.total);
+    return [
+      '<div class="row between"><div><div class="label">Trip brief</div><h1>Mid-term Feb 2027</h1><div class="muted">2 adults + 2 children (8 and 4 at travel) · from Dublin · 14–22 Feb · up to €3,200</div></div><button class="btn primary" data-toast="Add an option you found">' + ic("plus") + "Add option</button></div>",
+      '<div class="row"><a class="btn" href="https://www.skyscanner.ie/" target="_blank" rel="noopener">Skyscanner ' + ic("ext", 12) + '</a><a class="btn" href="https://www.google.com/travel/flights" target="_blank" rel="noopener">Google Flights ' + ic("ext", 12) + '</a><a class="btn" href="https://www.booking.com/" target="_blank" rel="noopener">Booking.com ' + ic("ext", 12) + "</a></div>",
+      '<div class="note">Prices here are options you entered, with the date you checked them. Caddy does not search live prices and never books anything.</div>',
+      '<div class="trips">' + trips.map((t, i) => '<article class="card trip"><div class="row between"><span class="rank">#' + (i + 1) + ' by total cost</span><span class="small muted">checked 12 Oct</span></div><div><h2>' + t.dest + '</h2><div class="small muted">' + t.sub + '</div></div><div><div class="big">' + money(t.total, true) + '</div><div class="small muted">' + money(t.total / 4, true) + ' per person · ' + (t.total <= 3200 ? '<span style="color:var(--green)">within budget</span>' : '<span style="color:var(--orange)">over budget</span>') + "</div></div><div>" +
+        t.comps.map(([n, d, p, est]) => '<div class="comp"><span>' + n + (est ? ' <span class="tag estimate">Estimate</span>' : "") + '<br><span class="small muted">' + d + '</span></span><span class="num">' + money(p, true) + "</span></div>").join("") +
+        '</div><div class="small">' + t.note + '</div><div class="small muted">' + t.miss + "</div></article>").join("") + "</div>"
+    ].join("");
+  };
+
+  /* More (phone hub) */
+  screens.more = () => '<h1>More</h1><section class="card list">' +
+    [["travel", "plane", "Travel", "Trip planner and cost comparison"], ["inbox", "bell", "Inbox", "3 unread"], ["prefs", "gear", "Settings", "Theme, alerts, members, jobs, data"]]
+      .map(([id, icn, t, s]) => '<div class="item clickable" data-go="' + id + '" role="button" tabindex="0">' + ic(icn, 22) + '<div class="grow"><div class="title">' + t + '</div><div class="small muted">' + s + "</div></div>›</div>").join("") + "</section>";
+
+  screens.inbox = () => {
+    const n = [
+      ["var(--green)", "2 new Cost Rental homes match", "Riverside Quarter (3 & 4 bed houses) · Shannon Bank (4 bed duplex)", "07:15", "housing"],
+      ["var(--orange)", "Electricity: comparison due", "Contract ends 3 Nov. Your renewal price is the most expensive of 5 offers.", "07:20", "money", "utilities"],
+      ["var(--yellow)", "Bill ready to review", "Electric Ireland · Sep 2026", "Yesterday", "bill"],
+      ["var(--cyan)", "Housing news", "Council approves 120 Cost Rental homes at Dock Road (reported, not yet confirmed)", "Yesterday", "housing"],
+      ["var(--red)", "Housing check failed", "Website did not respond. Retried at 08:00 and succeeded.", "Sun", "prefs"]
+    ];
+    return '<h1>Inbox</h1><section class="card list">' + n.map(([c, t, s, w, target, mt]) => '<div class="item clickable" data-go="' + target + '"' + (mt ? ' data-money="' + mt + '"' : "") + ' role="button" tabindex="0"><span class="stripe" style="--c:' + c + '"></span><div class="grow"><div class="title">' + t + '</div><div class="small muted">' + s + '</div></div><span class="small muted num">' + w + "</span></div>").join("") + "</section>";
+  };
+
+  screens.prefs = () => {
+    const th = state.theme;
+    const jobs = [["Housing check", "Daily ~07:15", "OK today 07:14", "c-green"], ["Amenity lookup", "After housing check", "OK today 07:16", "c-green"], ["Housing news", "Daily · Claude Code routine", "OK today 06:52", "c-green"], ["Bill reader", "On upload", "Running", "c-cyan"], ["Reminders and digest", "Daily 07:20", "OK today", "c-green"], ["Backup", "Nightly 02:00", "OK · restore tested 1 Oct", "c-green"]];
+    return '<h1>Settings</h1><div class="grid-2"><section class="stack">' +
+      '<div class="card pad stack"><h2>Appearance</h2><div class="seg" role="group" aria-label="Theme">' + [["system", "System"], ["light", "Light"], ["dark", "Dark"]].map(([k, l]) => '<button data-theme-set="' + k + '" aria-pressed="' + (th === k) + '">' + l + "</button>").join("") + '</div><div class="small muted">Dark is Dracula. Light is Alucard, its official light variant.</div></div>' +
+      '<div class="card pad stack"><h2>Alerts</h2>' + sw("Push notifications on this phone", true) + sw("Email digest at 07:30, only when something changed", true) + sw("New housing matches", true) + sw("Deadlines within 7 days", true) + sw("Housing news", false) + "</div>" +
+      '<div class="card pad stack"><h2>Household</h2><div class="row between"><span>Sam · sam@example.com</span><span class="chip plain c-muted">You</span></div><div class="row between"><span>Alex · alex@example.com</span><span class="chip plain c-muted">Adult</span></div><div class="row between"><span>Rowan (8), Ivy (4)</span><span class="small muted">No login</span></div><button class="btn" data-toast="Invite sent with a sign-in code">Invite adult</button></div>' +
+      '</section><section class="stack"><div class="card"><div class="pad" style="padding-bottom:6px"><h2>Background jobs</h2></div><div class="list">' +
+      jobs.map(([n, s, st, c]) => '<div class="item"><div class="grow"><div class="title">' + n + '</div><div class="small muted">' + s + '</div></div><span class="chip ' + c + '">' + st + "</span></div>").join("") +
+      '</div></div><div class="card pad stack"><h2>Your data</h2><div class="small muted">Export everything as CSV + JSON + original files, or delete the household.</div><div class="row"><button class="btn" data-toast="Export prepared">' + ic("download") + 'Export all</button><button class="btn" data-toast="Deletion needs both adults to confirm">Delete…</button></div></div></section></div>';
+  };
+  function sw(label, on) { return '<div class="row between" style="flex-wrap:nowrap"><span>' + label + '</span><button class="switch" role="switch" aria-checked="' + on + '" aria-label="' + esc(label) + '"></button></div>'; }
+
+  /* ---------------- Render + events ---------------- */
+  function render() {
+    renderNav();
+    document.getElementById("page").innerHTML = (screens[current] || screens.today)();
+  }
+  function applyTheme(t) {
+    state.theme = t; store.set("theme", t);
+    const r = document.documentElement;
+    if (t === "system") r.removeAttribute("data-theme"); else r.setAttribute("data-theme", t);
+  }
+
+  document.addEventListener("click", (e) => {
+    const el = e.target.closest("[data-go],[data-filter],[data-ltab],[data-money],[data-cat],[data-confirm],[data-confirm-all],[data-save-bill],[data-theme-set],[data-toast],.switch");
+    if (!el) return;
+    if (el.matches(".switch")) { el.setAttribute("aria-checked", el.getAttribute("aria-checked") !== "true"); return; }
+    if (el.dataset.toast) { toast(el.dataset.toast); return; }
+    if (el.dataset.themeSet) { applyTheme(el.dataset.themeSet); render(); return; }
+    if (el.dataset.filter) { state.filter = el.dataset.filter; render(); return; }
+    if (el.dataset.ltab) { state.ltab = el.dataset.ltab; render(); return; }
+    if (el.dataset.cat) { const k = el.dataset.cat; state.cats.has(k) ? state.cats.delete(k) : state.cats.add(k); if (!state.cats.size) state.cats.add(k); render(); return; }
+    if (el.dataset.confirm) { const k = el.dataset.confirm; state.confirmed.has(k) ? state.confirmed.delete(k) : state.confirmed.add(k); render(); return; }
+    if (el.hasAttribute("data-confirm-all")) { ["supplier", "period", "total", "vat", "day", "night", "peak", "standing", "account"].forEach((k) => state.confirmed.add(k)); render(); return; }
+    if (el.hasAttribute("data-save-bill")) { toast("Saved · linked to spending, contract and Tax 2026"); go("money", { money: "bills" }); return; }
+    if (el.dataset.go) {
+      const opts = {};
+      if (el.dataset.listing) { opts.listing = el.dataset.listing; opts.ltab = "nearby"; }
+      if (el.dataset.money) opts.money = el.dataset.money;
+      go(el.dataset.go, opts); return;
+    }
+    if (el.dataset.money) { state.money = el.dataset.money; render(); return; }
+  });
+  document.addEventListener("keydown", (e) => {
+    if ((e.key === "Enter" || e.key === " ") && e.target.matches('[role="button"][data-go]')) { e.preventDefault(); e.target.click(); }
+  });
+  document.addEventListener("change", (e) => {
+    if (e.target.dataset && e.target.dataset.list) { state.lists[e.target.dataset.list] = e.target.checked; render(); }
+  });
+  document.getElementById("tb-inbox").addEventListener("click", () => go("inbox"));
+
+  applyTheme(state.theme);
+  const start = (location.hash || "").replace("#", "");
+  current = screens[start] ? start : "today";
+  render();
+})();
+</script>
