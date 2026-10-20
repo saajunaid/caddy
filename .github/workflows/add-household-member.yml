@@ -1,0 +1,49 @@
+name: Add household member
+
+# Creates the household on first run and adds an adult who can sign in with an email code.
+# Sign-ups are switched off in Supabase, so use this for the first account; after that,
+# adults can invite each other from Settings in the app.
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: "Their email address"
+        required: true
+        type: string
+      name:
+        description: "Name shown in the app"
+        required: true
+        type: string
+      household_name:
+        description: "Household name (only used the first time)"
+        required: false
+        default: "Our household"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  add:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Hide the email address in logs
+        env:
+          MEMBER_EMAIL: ${{ inputs.email }}
+        run: echo "::add-mask::$MEMBER_EMAIL"
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Add the member
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_PROD_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_PROD_SECRET_KEY }}
+          MEMBER_EMAIL: ${{ inputs.email }}
+          MEMBER_NAME: ${{ inputs.name }}
+          HOUSEHOLD_NAME: ${{ inputs.household_name }}
+        run: node --experimental-strip-types scripts/add-household-member.ts

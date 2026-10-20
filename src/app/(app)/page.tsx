@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Chip } from "@/components/ui/status";
 import { NAV_ITEMS } from "@/modules/nav";
+import { requireHousehold } from "@/server/auth";
 import { dublinDate, formatLongDate, greetingFor } from "@/server/domain/dates";
 
 export const metadata = { title: "Today" };
@@ -14,15 +15,31 @@ const MODULE_IDS = ["housing", "money", "family", "travel"];
 
 export default async function TodayPage() {
   await connection(); // Render per request so the date and greeting are always current.
+  const { profile } = await requireHousehold();
   const now = new Date();
+  const firstName = profile?.displayName.split(" ")[0];
   const modules = NAV_ITEMS.filter((item) => MODULE_IDS.includes(item.id));
 
   return (
     <>
       <PageHeader
         eyebrow={formatLongDate(dublinDate(now))}
-        title={greetingFor(now)}
+        title={
+          firstName ? `${greetingFor(now)}, ${firstName}` : greetingFor(now)
+        }
       />
+
+      {profile ? null : (
+        <Card className="grid gap-1 border-review/50 p-4">
+          <h2 className="text-[1.05rem] font-semibold">
+            Your account isn&apos;t linked yet
+          </h2>
+          <p className="text-muted">
+            You&apos;re signed in, but your account isn&apos;t part of a
+            household. An adult in your household can add you from Settings.
+          </p>
+        </Card>
+      )}
 
       <Card>
         <div className="px-4 pt-4 pb-1.5">

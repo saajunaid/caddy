@@ -1,0 +1,42 @@
+name: Apply database migrations
+
+# Applies new files in supabase/migrations to the Supabase project after they merge to main.
+# CI has already run every migration and the row-level security tests on a scratch database.
+on:
+  push:
+    branches: [main]
+    paths: ["supabase/migrations/**"]
+  workflow_dispatch:
+
+concurrency:
+  group: db-migrate
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.119.0
+      - name: Check the database secret is set
+        env:
+          SUPABASE_PROD_DB_URL: ${{ secrets.SUPABASE_PROD_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_PROD_DB_URL" ]; then
+            echo "::error::Add the SUPABASE_PROD_DB_URL repository secret (Session pooler URI)."
+            exit 1
+          fi
+      - name: Show pending migrations
+        env:
+          SUPABASE_PROD_DB_URL: ${{ secrets.SUPABASE_PROD_DB_URL }}
+        run: supabase migration list --db-url "$SUPABASE_PROD_DB_URL"
+      - name: Apply migrations
+        env:
+          SUPABASE_PROD_DB_URL: ${{ secrets.SUPABASE_PROD_DB_URL }}
+        run: supabase db push --db-url "$SUPABASE_PROD_DB_URL" --include-all --yes

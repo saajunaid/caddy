@@ -1,0 +1,30 @@
+<!-- Caddy sign-in code email. Paste into Supabase: Authentication → Emails → Magic Link. -->
+<div
+  style="
+    font-family: -apple-system, &quot;Segoe UI&quot;, Roboto, sans-serif;
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 24px;
+    color: #1f1f1f;
+  "
+>
+  <p style="font-size: 18px; font-weight: 700; margin: 0 0 16px">Caddy</p>
+  <p style="margin: 0 0 12px">Your sign-in code is:</p>
+  <p
+    style="
+      font-family: &quot;SF Mono&quot;, Menlo, Consolas, monospace;
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: 6px;
+      margin: 0 0 16px;
+    "
+  >
+    {{ .Token }}
+  </p>
+  <p style="margin: 0 0 12px">
+    Type it on the Caddy sign-in page. It expires in 10 minutes and works once.
+  </p>
+  <p style="color: #6c664b; font-size: 13px; margin: 0">
+    If you didn't try to sign in, you can ignore this email.
+  </p>
+</div>

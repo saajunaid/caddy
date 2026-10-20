@@ -47,6 +47,8 @@ Caddy is an organiser and early-warning system. It never applies, books, switche
 | D20 | Environments | **One Supabase project (prod)**, no staging. Vercel previews use the same project; only merges to `main` change the schema (via GitHub Actions). | User choice: halves setup for a two-person app. Tests run against a local Postgres in CI, never the real database. |
 | D21 | Service worker | **Hand-written `public/sw.js`** (offline page + hashed static assets only) instead of Serwist | Next.js 16's PWA guide uses a plain worker; avoids a plugin tied to the bundler. Push handlers are added to the same file in PR-3. |
 | D22 | Dev network | Cloud environment has **full network access**; it holds only public values (Supabase URL, publishable key) | User choice. Secrets live only in Vercel and GitHub Actions. |
+| D23 | Sign-in | **6-digit email code**, invite-only. Sign-ups off globally (email provider stays on). First adult added by the "Add household member" GitHub Action; others from Settings. Custom email template shows the code. | Supabase's default template sends a link; turning off the email provider's own sign-up switch disables email login entirely (found in local testing). |
+| D24 | Email sending | **Custom SMTP** (Gmail app password, or Resend with a verified domain) | Supabase's built-in mailer only reaches Supabase team members at ~2 emails/hour; Resend's free sender only reaches your own address without a domain. |
 
 ---
 
@@ -276,11 +278,11 @@ Global search arrives in R2 (once there's enough data to search).
 
 | Token | Dark (Dracula) | Light (Alucard) | Use |
 |---|---|---|---|
-| `--bg` | `#282A36` | `#FFFBEB` | Page |
+| `--bg` | `#282A36` | `#FAF7F2`* | Page |
 | `--surface` | `#2E303E`* | `#FFFFFF`* | Cards |
-| `--line` | `#44475A` | `#E3DCC2`* | Borders, dividers |
+| `--line` | `#44475A` | `#E3DBD1`* | Borders, dividers |
 | `--fg` | `#F8F8F2` | `#1F1F1F` | Text |
-| `--muted` | `#9AA5CE`* | `#6C664B` | Secondary text |
+| `--muted` | `#9AA5CE`* | `#6B6159` | Secondary text |
 | `--purple` | `#BD93F9` | `#644AC9` | Primary action, focus |
 | `--green` | `#50FA7B` | `#14710A` | New / open / success |
 | `--orange` | `#FFB86C` | `#A34D14` | Closing soon / due |
@@ -289,7 +291,7 @@ Global search arrives in R2 (once there's enough data to search).
 | `--yellow` | `#F1FA8C` | `#846E15` | Needs review / estimate |
 | `--pink` | `#FF79C6` | `#A3144D` | Your own picks (saved, curated) |
 
-\* Derived values, to be tuned in the prototype. Dracula's stock comment colour `#6272A4` is only ~3:1 on `#282A36`, which **fails WCAG AA for body text**, so `--muted` is a lighter derived tone. Every text/background pair is contrast-checked in the prototype. Theme options: System (default) / Light / Dark.
+\* Derived values. The light theme uses warm stone neutrals instead of Alucard's yellow cream background (user preference); Alucard's accent colours are unchanged. Dracula's stock comment colour `#6272A4` is only ~3:1 on `#282A36`, which **fails WCAG AA for body text**, so `--muted` is a lighter derived tone. Every text/background pair is contrast-checked in the prototype. Theme options: System (default) / Light / Dark.
 
 **Type:** Instrument Sans for UI; JetBrains Mono (a nod to Dracula's editor roots) for money, dates and reference numbers, always with tabular numerals.
 
@@ -343,8 +345,8 @@ The original 42-PR, 3–4 month plan is replaced by **~14 larger PRs**. Modules 
 
 | Block | PR | Contents (plan task IDs) | Runs |
 |---|---|---|---|
-| A | **PR-1 Foundation** | Next.js scaffold, Tailwind + Dracula/Alucard tokens from the prototype, app shell (sidebar/bottom nav), PWA (manifest, icons, service worker, offline banner), lint/typecheck/test/CI, SessionStart hook (0.3, 0.4) | This session |
-| A | **PR-2 Data + auth** | Supabase migrations (core tables), RLS + RLS tests, email OTP login, invite second adult, audit events, generated types (0.5, 0.6) | This session |
+| A ✅ | **PR-1 Foundation** | Next.js scaffold, Tailwind + Dracula/Alucard tokens from the prototype, app shell (sidebar/bottom nav), PWA (manifest, icons, service worker, offline banner), lint/typecheck/test/CI, SessionStart hook (0.3, 0.4) | This session |
+| A ✅ | **PR-2 Data + auth** | Supabase migrations (core tables), RLS + RLS tests, email OTP login, invite second adult, audit events, generated types (0.5, 0.6) | This session |
 | A | **PR-3 Jobs + alerts + deploy** | `job_runs` ledger, job runner, GitHub Actions templates, ingest endpoint auth, in-app inbox, Web Push, Vercel prod deploy, nightly encrypted backup (0.7, 0.8, 0.9) | This session |
 | B | **PR-4 Housing engine** | newstarterhomes.ie fixtures, parser, matching, observations/change detection, `housing-daily` workflow, sanity guard, notifications (1.1–1.4) | Parallel session 1 |
 | B | **PR-5 Housing UI** | List (cards/table), filters, detail tabs, history, application tracker, create-task-from-deadline (1.5) | Parallel session 2 |
