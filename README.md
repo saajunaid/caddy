@@ -28,14 +28,23 @@ pnpm format:check # Prettier
 pnpm build        # production build
 ```
 
+Database tests run migrations and the row-level security tests against a throwaway Postgres in Docker:
+
+```bash
+pnpm db:local                                                            # start Postgres on port 54329
+DATABASE_URL=postgres://postgres:postgres@localhost:54329/postgres pnpm test:db
+DATABASE_URL=postgres://postgres:postgres@localhost:54329/postgres pnpm db:types   # regenerate types
+```
+
 `pnpm icons` regenerates the app icons in `public/icons` from `scripts/generate-icons.mjs`.
 
 ## Deployment
 
 - **Vercel** builds every PR as a preview and deploys `main` to production.
-- **Supabase**: one project (`caddy-prod`). Schema changes are applied by GitHub Actions on merge to `main`.
+- **Supabase**: one project (`caddy-prod`). Schema changes are applied by GitHub Actions on merge to `main`. One-time dashboard setup: [`docs/setup/supabase.md`](docs/setup/supabase.md).
+- **First sign-in**: sign-ups are off. Run **Actions → Add household member** for the first adult, then invite others from Settings.
 - Where each secret lives is listed in `docs/PLAN.md` §10. Never commit `.env.local` or real household data.
 
 ## Status
 
-Foundation in place (app shell, theme, installable PWA, CI). Next: PR-2, data and logins. See the 2-day sprint in `docs/PLAN.md` §9.
+Foundation, database and sign-in in place. Next: PR-3, background jobs, alerts and deploy. See the 2-day sprint in `docs/PLAN.md` §9.
