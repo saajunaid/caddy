@@ -52,6 +52,36 @@ export type Database = {
           },
         ];
       };
+      fx_rates: {
+        Row: {
+          base: string;
+          currency: string;
+          fetched_at: string;
+          id: string;
+          rate: number;
+          rate_date: string;
+          source: string;
+        };
+        Insert: {
+          base?: string;
+          currency: string;
+          fetched_at?: string;
+          id?: string;
+          rate: number;
+          rate_date: string;
+          source?: string;
+        };
+        Update: {
+          base?: string;
+          currency?: string;
+          fetched_at?: string;
+          id?: string;
+          rate?: number;
+          rate_date?: string;
+          source?: string;
+        };
+        Relationships: [];
+      };
       household_members: {
         Row: {
           created_at: string;
@@ -361,6 +391,307 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "push_subscriptions_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      trip_candidates: {
+        Row: {
+          created_at: string;
+          departure_airport: string;
+          destination: string;
+          destination_airport: string | null;
+          destination_country: string | null;
+          household_id: string;
+          id: string;
+          nights: number | null;
+          notes: string | null;
+          outbound_date: string;
+          return_date: string;
+          status: string;
+          trade_offs: string | null;
+          trip_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          departure_airport?: string;
+          destination: string;
+          destination_airport?: string | null;
+          destination_country?: string | null;
+          household_id: string;
+          id?: string;
+          nights?: never;
+          notes?: string | null;
+          outbound_date: string;
+          return_date: string;
+          status?: string;
+          trade_offs?: string | null;
+          trip_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          departure_airport?: string;
+          destination?: string;
+          destination_airport?: string | null;
+          destination_country?: string | null;
+          household_id?: string;
+          id?: string;
+          nights?: never;
+          notes?: string | null;
+          outbound_date?: string;
+          return_date?: string;
+          status?: string;
+          trade_offs?: string | null;
+          trip_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "trip_candidates_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "trip_candidates_trip_id_household_id_fkey";
+            columns: ["trip_id", "household_id"];
+            isOneToOne: false;
+            referencedRelation: "trips";
+            referencedColumns: ["id", "household_id"];
+          },
+        ];
+      };
+      trip_components: {
+        Row: {
+          board_basis: string | null;
+          booking_url: string | null;
+          cancellation_terms: string | null;
+          candidate_id: string;
+          checked_at: string;
+          created_at: string;
+          currency: string;
+          description: string | null;
+          duration_minutes: number | null;
+          excludes: string | null;
+          free_cancellation: boolean | null;
+          fx_rate_id: string | null;
+          household_id: string;
+          id: string;
+          includes: string | null;
+          is_estimate: boolean;
+          kind: string;
+          price_minor: number;
+          provider: string | null;
+          source: string;
+          stops: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          board_basis?: string | null;
+          booking_url?: string | null;
+          cancellation_terms?: string | null;
+          candidate_id: string;
+          checked_at?: string;
+          created_at?: string;
+          currency?: string;
+          description?: string | null;
+          duration_minutes?: number | null;
+          excludes?: string | null;
+          free_cancellation?: boolean | null;
+          fx_rate_id?: string | null;
+          household_id: string;
+          id?: string;
+          includes?: string | null;
+          is_estimate?: boolean;
+          kind: string;
+          price_minor: number;
+          provider?: string | null;
+          source?: string;
+          stops?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          board_basis?: string | null;
+          booking_url?: string | null;
+          cancellation_terms?: string | null;
+          candidate_id?: string;
+          checked_at?: string;
+          created_at?: string;
+          currency?: string;
+          description?: string | null;
+          duration_minutes?: number | null;
+          excludes?: string | null;
+          free_cancellation?: boolean | null;
+          fx_rate_id?: string | null;
+          household_id?: string;
+          id?: string;
+          includes?: string | null;
+          is_estimate?: boolean;
+          kind?: string;
+          price_minor?: number;
+          provider?: string | null;
+          source?: string;
+          stops?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "trip_components_candidate_id_household_id_fkey";
+            columns: ["candidate_id", "household_id"];
+            isOneToOne: false;
+            referencedRelation: "trip_candidates";
+            referencedColumns: ["id", "household_id"];
+          },
+          {
+            foreignKeyName: "trip_components_fx_rate_id_currency_fkey";
+            columns: ["fx_rate_id", "currency"];
+            isOneToOne: false;
+            referencedRelation: "fx_rates";
+            referencedColumns: ["id", "currency"];
+          },
+          {
+            foreignKeyName: "trip_components_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      trip_travellers: {
+        Row: {
+          age_at_travel: number | null;
+          confirmed: boolean;
+          created_at: string;
+          household_id: string;
+          id: string;
+          is_child: boolean;
+          member_id: string | null;
+          name: string;
+          trip_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          age_at_travel?: number | null;
+          confirmed?: boolean;
+          created_at?: string;
+          household_id: string;
+          id?: string;
+          is_child?: boolean;
+          member_id?: string | null;
+          name: string;
+          trip_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          age_at_travel?: number | null;
+          confirmed?: boolean;
+          created_at?: string;
+          household_id?: string;
+          id?: string;
+          is_child?: boolean;
+          member_id?: string | null;
+          name?: string;
+          trip_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "trip_travellers_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "trip_travellers_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "household_members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "trip_travellers_trip_id_household_id_fkey";
+            columns: ["trip_id", "household_id"];
+            isOneToOne: false;
+            referencedRelation: "trips";
+            referencedColumns: ["id", "household_id"];
+          },
+        ];
+      };
+      trips: {
+        Row: {
+          board_basis: string;
+          budget_cents: number | null;
+          created_at: string;
+          date_from: string;
+          date_to: string;
+          departure_airports: string[];
+          destination_ideas: string | null;
+          household_id: string;
+          id: string;
+          max_flight_minutes: number | null;
+          max_stops: number | null;
+          name: string;
+          nights_max: number | null;
+          nights_min: number | null;
+          notes: string | null;
+          require_free_cancellation: boolean;
+          room_needs: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          board_basis?: string;
+          budget_cents?: number | null;
+          created_at?: string;
+          date_from: string;
+          date_to: string;
+          departure_airports?: string[];
+          destination_ideas?: string | null;
+          household_id: string;
+          id?: string;
+          max_flight_minutes?: number | null;
+          max_stops?: number | null;
+          name: string;
+          nights_max?: number | null;
+          nights_min?: number | null;
+          notes?: string | null;
+          require_free_cancellation?: boolean;
+          room_needs?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          board_basis?: string;
+          budget_cents?: number | null;
+          created_at?: string;
+          date_from?: string;
+          date_to?: string;
+          departure_airports?: string[];
+          destination_ideas?: string | null;
+          household_id?: string;
+          id?: string;
+          max_flight_minutes?: number | null;
+          max_stops?: number | null;
+          name?: string;
+          nights_max?: number | null;
+          nights_min?: number | null;
+          notes?: string | null;
+          require_free_cancellation?: boolean;
+          room_needs?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "trips_household_id_fkey";
             columns: ["household_id"];
             isOneToOne: false;
             referencedRelation: "households";

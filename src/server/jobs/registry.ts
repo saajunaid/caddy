@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../../lib/supabase/database.types.ts";
 import { dublinDate } from "../domain/dates.ts";
 import type { JobContext } from "./runner.ts";
+import { fxEcbJob, travelWeeklyJob } from "../../modules/travel/server/jobs.ts";
 
 export type JobGroup = "daily" | "weekly";
 
@@ -38,4 +39,8 @@ const heartbeat: JobDefinition = {
   },
 };
 
-export const JOBS: readonly JobDefinition[] = [heartbeat];
+export const JOBS: readonly JobDefinition[] = [
+  heartbeat,
+  fxEcbJob,
+  travelWeeklyJob,
+];
