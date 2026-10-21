@@ -9,6 +9,8 @@ import { runHousingDaily, type HousingJobContext } from "./job";
 import { CALENDAR_URL, INDEX_URL, listingUrl } from "./parser";
 import { fixture, fixtureFetcher } from "./testing/fixtures";
 import { MemoryHousingStore } from "./testing/memory-store";
+import { weeklySlot } from "./upsert";
+import { daysBetween } from "../../../server/domain/dates";
 
 const SLUGS = [
   "woodbrook1",
@@ -203,11 +205,29 @@ describe("housing-daily", () => {
     const fetchedListings = fetcher.calls.filter(
       (u) => u !== CALENDAR_URL && /\/rent\/[a-z0-9-]+\/$/.test(u),
     );
-    expect(fetchedListings.sort()).toEqual(
-      ["harmen", "long", "sidings", "woodbrook1"].map(listingUrl).sort(),
+    // Active listings every day; closed ones only on their weekly slot.
+    const closedToday = SLUGS.filter(
+      (slug) =>
+        !["harmen", "long", "sidings", "woodbrook1"].includes(slug) &&
+        weeklySlot(slug) === daysBetween("1970-01-01", "2026-10-22") % 7,
     );
-    expect(store.byExternalId("griffin").last_seen_at).toBe(
+    expect(fetchedListings.sort()).toEqual(
+      ["harmen", "long", "sidings", "woodbrook1", ...closedToday]
+        .map(listingUrl)
+        .sort(),
+    );
+    expect(closedToday.length).toBeLessThan(6);
+    const skipped = SLUGS.find(
+      (slug) =>
+        slug !== "long" &&
+        !closedToday.includes(slug) &&
+        store.byExternalId(slug).status === "closed",
+    )!;
+    expect(store.byExternalId(skipped).last_seen_at).toBe(
       new Date(DAY2).toISOString(),
+    );
+    expect(store.byExternalId(skipped).last_checked_at).toBe(
+      new Date(DAY1).toISOString(),
     );
     expect(store.notifications).toHaveLength(2);
     expect(run.summary).toBe("10 listings checked · 1 match · 0 new");

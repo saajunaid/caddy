@@ -2,16 +2,26 @@
 import { formatMoney } from "../../../server/domain/money.ts";
 import type { ListingSnapshot, SourceStatus, UnitType } from "./types.ts";
 
-const dayMonth = new Intl.DateTimeFormat("en-IE", {
-  timeZone: "UTC",
-  day: "numeric",
-  month: "short",
-});
+// Fixed names: ICU versions disagree on "Sep" vs "Sept", and the server and browser must match.
+const MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 /** "2026-11-06" → "6 Nov". */
 export function shortDate(iso: string): string {
-  const [y, m, d] = iso.split("-").map(Number);
-  return dayMonth.format(new Date(Date.UTC(y, m - 1, d)));
+  const [, m, d] = iso.split("-").map(Number);
+  return `${d} ${MONTHS[m - 1]}`;
 }
 
 const euro = (cents: number | null) =>

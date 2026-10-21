@@ -3,7 +3,7 @@
 // Only listing columns are ever produced here. Applications (status, outcome, notes…) are
 // user-owned and live in housing_applications, which the daily job never reads or writes.
 import type { Json } from "../../../lib/supabase/database.types.ts";
-import { daysBetween } from "../../../server/domain/dates.ts";
+import { daysBetween, dublinDate } from "../../../server/domain/dates.ts";
 import { describeChanges } from "./changes.ts";
 import { listingMatch } from "./matching.ts";
 import { snapshotHash } from "./snapshot.ts";
@@ -275,11 +275,32 @@ export function missingUpdate(
  */
 export function needsDetailFetch(
   indexStatus: SourceStatus,
-  existing: Pick<ExistingListing, "status" | "last_checked_at"> | null,
+  existing: Pick<
+    ExistingListing,
+    "external_id" | "status" | "last_checked_at"
+  > | null,
   now: Date,
 ): boolean {
   if (!existing) return true;
   if (indexStatus !== "closed" || existing.status !== "closed") return true;
-  const age = now.getTime() - new Date(existing.last_checked_at).getTime();
-  return age >= 7 * 24 * 60 * 60 * 1000;
+  const today = dublinDate(now);
+  const age = daysBetween(
+    dublinDate(new Date(existing.last_checked_at)),
+    today,
+  );
+  if (age >= 8) return true;
+  // Spread the weekly re-reads over the week instead of re-reading every closed listing
+  // on the same day: each listing has a fixed weekday slot.
+  return age >= 1 && weeklySlot(existing.external_id) === dayNumber(today) % 7;
+}
+
+/** A stable 0–6 slot for a listing. */
+export function weeklySlot(externalId: string): number {
+  let sum = 0;
+  for (const char of externalId) sum = (sum * 31 + char.charCodeAt(0)) % 7919;
+  return sum % 7;
+}
+
+function dayNumber(isoDate: string): number {
+  return daysBetween("1970-01-01", isoDate);
 }

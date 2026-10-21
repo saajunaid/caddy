@@ -10,8 +10,10 @@ import {
   LISTING_COLUMNS,
   missingUpdate,
   needsDetailFetch,
+  weeklySlot,
   type ExistingListing,
 } from "./upsert";
+import { addDays } from "../../../server/domain/dates";
 
 const NOW = new Date("2026-10-18T06:15:00Z");
 const TODAY = "2026-10-18";
@@ -203,36 +205,50 @@ describe("missingUpdate", () => {
 });
 
 describe("needsDetailFetch", () => {
-  const recent = { status: "closed", last_checked_at: "2026-10-19T06:00:00Z" };
+  const at = (iso: string) => new Date(`${iso}T06:15:00Z`);
+  const recent = {
+    external_id: "griffin",
+    status: "closed",
+    last_checked_at: "2026-10-20T06:00:00Z",
+  };
+
   it("fetches new, open and changed listings every day", () => {
-    expect(
-      needsDetailFetch("closed", null, new Date("2026-10-21T06:15:00Z")),
-    ).toBe(true);
-    expect(
-      needsDetailFetch("open", recent, new Date("2026-10-21T06:15:00Z")),
-    ).toBe(true);
-    expect(
-      needsDetailFetch("coming_soon", recent, new Date("2026-10-21T06:15:00Z")),
-    ).toBe(true);
+    expect(needsDetailFetch("closed", null, at("2026-10-21"))).toBe(true);
+    expect(needsDetailFetch("open", recent, at("2026-10-21"))).toBe(true);
+    expect(needsDetailFetch("coming_soon", recent, at("2026-10-21"))).toBe(
+      true,
+    );
     expect(
       needsDetailFetch(
         "closed",
         { ...recent, status: "open" },
-        new Date("2026-10-21T06:15:00Z"),
+        at("2026-10-21"),
       ),
     ).toBe(true);
   });
 
-  it("re-reads closed listings weekly", () => {
-    expect(
-      needsDetailFetch("closed", recent, new Date("2026-10-21T06:15:00Z")),
-    ).toBe(false);
-    expect(
+  it("re-reads each closed listing once a week, on its own weekday", () => {
+    const checkedOn = "2026-10-20";
+    const days = Array.from({ length: 7 }, (_, i) => addDays(checkedOn, i + 1));
+    const fetchDays = days.filter((day) =>
       needsDetailFetch(
         "closed",
-        { ...recent, last_checked_at: "2026-10-14T06:00:00Z" },
-        new Date("2026-10-21T06:15:00Z"),
+        { ...recent, last_checked_at: `${checkedOn}T06:00:00Z` },
+        at(day),
       ),
-    ).toBe(true);
+    );
+    expect(fetchDays).toHaveLength(1);
+    // Never more than 8 days without a re-read.
+    expect(needsDetailFetch("closed", recent, at("2026-10-28"))).toBe(true);
+    // Not on the day it was last read.
+    expect(needsDetailFetch("closed", recent, at("2026-10-20"))).toBe(false);
+  });
+
+  it("spreads closed listings across the week", () => {
+    const slugs = Array.from({ length: 200 }, (_, i) => `listing-${i}`);
+    const perSlot = [0, 1, 2, 3, 4, 5, 6].map(
+      (slot) => slugs.filter((s) => weeklySlot(s) === slot).length,
+    );
+    expect(Math.min(...perSlot)).toBeGreaterThan(15);
   });
 });
