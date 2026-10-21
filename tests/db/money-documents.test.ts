@@ -413,6 +413,118 @@ describe("evidence", () => {
   });
 });
 
+// The statements the server actions send through PostgREST, run as a signed-in adult, so a missing
+// grant or policy (upserts need insert AND update) fails here rather than in production.
+describe("app writes as a signed-in adult", () => {
+  it("reserve a document, then record what was read", async () => {
+    const error = await errorAs(db, f.userA, async () => {
+      const id = randomUUID();
+      await db.query(
+        `insert into public.documents (id, household_id, storage_path, original_filename, mime_type, size_bytes, sha256, review_status, uploaded_by)
+         values ($1, $2, $3, 'bill.pdf', 'application/pdf', 1000, $4, 'processing', $5)`,
+        [id, f.householdA, `${f.householdA}/${id}/bill.pdf`, hash(200), f.userA],
+      );
+      await db.query(
+        `insert into public.document_extractions (household_id, document_id, extractor, extractor_version, text_source, text_chars, proposed, confidence, snippets, candidates, warnings, created_by)
+         values ($1, $2, 'rules:eir', '1.1', 'text-layer', 400, '{"total_cents": 4500}', '{"total_cents": "high"}', '{}', '{}', '{}', $3)`,
+        [f.householdA, id, f.userA],
+      );
+      await db.query(
+        `update public.documents set supplier = 'Eir', total_cents = 4500, details = '{"day_kwh": "1"}', review_status = 'needs_review'
+         where id = $1 and review_status = 'processing'`,
+        [id],
+      );
+    });
+    expect(error).toBeNull();
+  });
+
+  it("open a tax year by upsert (twice) and link evidence", async () => {
+    const result = await as(db, f.userA, async () => {
+      const upsert = () =>
+        db.query(
+          `insert into public.tax_years (household_id, jurisdiction, year) values ($1, 'IE', 2025)
+           on conflict (household_id, jurisdiction, year)
+           do update set household_id = excluded.household_id, jurisdiction = excluded.jurisdiction, year = excluded.year
+           returning id`,
+          [f.householdA],
+        );
+      const first = (await upsert()).rows[0].id;
+      const second = (await upsert()).rows[0].id;
+      await db.query(
+        `insert into public.document_links (household_id, document_id, entity_type, entity_id, purpose)
+         values ($1, $2, 'tax_year', $3, 'tax_evidence'), ($1, $2, 'tax_year', $3, 'tax_evidence')
+         on conflict (document_id, entity_type, entity_id) do nothing`,
+        [f.householdA, a.document, first],
+      );
+      return { same: first === second };
+    });
+    expect(result.same).toBe(true);
+  });
+
+  it("can't upsert over another household's tax year", async () => {
+    const error = await errorAs(db, f.userA, () =>
+      db.query(
+        `insert into public.tax_years (household_id, jurisdiction, year) values ($1, 'IE', 2026)
+         on conflict (household_id, jurisdiction, year) do update set year = excluded.year`,
+        [f.householdB],
+      ),
+    );
+    expect(error).toMatch(/row-level security/);
+  });
+
+  it("save WFH days by upsert and clear a month", async () => {
+    const days = await as(db, f.userA, async () => {
+      for (const d of [5, 7]) {
+        await db.query(
+          `insert into public.wfh_days (household_id, member_id, tax_year, month, days, updated_by)
+           values ($1, $2, 2026, 3, $3, $4)
+           on conflict (member_id, tax_year, month)
+           do update set household_id = excluded.household_id, member_id = excluded.member_id,
+             tax_year = excluded.tax_year, month = excluded.month, days = excluded.days,
+             updated_by = excluded.updated_by`,
+          [f.householdA, a.memberAdult, d, f.userA],
+        );
+      }
+      const saved = (
+        await db.query(
+          "select days from public.wfh_days where member_id = $1 and tax_year = 2026 and month = 3",
+          [a.memberAdult],
+        )
+      ).rows[0].days;
+      await db.query(
+        "delete from public.wfh_days where member_id = $1 and tax_year = 2026 and month in (3)",
+        [a.memberAdult],
+      );
+      return saved;
+    });
+    expect(days).toBe(7);
+  });
+
+  it("confirm a review and link an expense", async () => {
+    const error = await errorAs(db, f.userA, async () => {
+      await db.query(
+        `update public.documents set supplier = 'Electric Ireland', document_type = 'electricity_bill',
+           document_date = '2026-10-03', period_start = '2026-09-01', period_end = '2026-09-30',
+           due_date = '2026-10-20', total_cents = 21248, vat_cents = 1754, details = '{}',
+           confirmed_fields = '{supplier,total_cents}', review_status = 'confirmed',
+           confirmed_by = $2, confirmed_at = now()
+         where id = $1`,
+        [a.document, f.userA],
+      );
+      await db.query(
+        `update public.expenses set merchant = 'Electric Ireland', amount_cents = 21248, payment_status = 'paid', is_recurring = true, review_status = 'confirmed' where id = $1`,
+        [a.expense],
+      );
+      await db.query(
+        `insert into public.audit_events (household_id, actor_id, action, entity_type, entity_id)
+         values ($1, $2, 'document.confirmed', 'document', $3)`,
+        [f.householdA, f.userA, a.document],
+      );
+    });
+    expect(error).toBeNull();
+  });
+});
+
 // The test database has no Supabase storage schema, so the migration skips its storage section.
 // Recreate the tiny part of storage the policies use, then run that section again to test the rules.
 describe("storage policies", () => {
