@@ -44,7 +44,8 @@ export function buildOverpassQuery(center: LatLon): string {
     `  nwr["diet:halal"~"^(yes|only)$"]${around("halal")};`,
     `  nwr["cuisine"~"halal",i]${around("halal")};`,
     `  nwr["amenity"~"^(restaurant|fast_food|cafe|food_court)$"]["name"~"halal",i]${around("halal")};`,
-    `  nwr["shop"]["name"~"halal",i]${around("halal")};`,
+    // Only food shops: a name regex over every shop timed out on a busy mirror.
+    `  nwr["shop"~"^(butcher|convenience|supermarket|deli|greengrocer|grocery|food)$"]["name"~"halal",i]${around("halal")};`,
     ");",
     "out tags center;",
   ].join("\n");

@@ -131,6 +131,33 @@ describe("parseOverpass (synthetic mosque and halal fixture)", () => {
   });
 });
 
+describe("parseOverpass (real timeout answer)", () => {
+  // Real response from a busy mirror (Ballincollig, Cork): HTTP 200, no elements, error remark.
+  const timeout = JSON.parse(
+    readFileSync(
+      path.resolve(
+        process.cwd(),
+        "tests/fixtures/overpass/ballincollig-timeout-remark.json",
+      ),
+      "utf8",
+    ),
+  );
+
+  it("is reported as a busy failure, never as zero places", async () => {
+    expect(parseOverpass(timeout).remark).toMatch(/runtime error/);
+    const result = await fetchOverpass(center, {
+      fetch: (async () => json(timeout)) as unknown as typeof fetch,
+      mirrors: ["https://a.example"],
+    });
+    expect(result).toMatchObject({
+      status: "failed",
+      busy: true,
+      itemsSeen: 0,
+    });
+    expect(result.error).toMatch(/timed out/);
+  });
+});
+
 describe("fetchOverpass", () => {
   it("sends an identifying User-Agent and returns places", async () => {
     const fetch = vi.fn(async () => json(castletroy));
