@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Pencil, Trash2 } from "lucide-react";
+import { DataTable } from "@/components/ui/data-table";
 import { Chip, ProvenanceTag, type Tone } from "@/components/ui/status";
 import { daysBetween } from "@/server/domain/dates";
 import { formatMoney } from "@/server/domain/money";
@@ -71,70 +72,85 @@ function SupplierCell({ row }: { row: ComparisonRow }) {
   );
 }
 
-/** Rank · supplier · year 1 · year 2 · vs renewal · includes, as in the prototype. */
+const STATUS_LABEL: Record<ComparisonRow["status"], string> = {
+  ranked: "Ranked",
+  excluded: "Excluded supplier",
+  not_comparable: "Not comparable",
+};
+
+/** Rank · supplier · year 1 · year 2 · vs renewal · includes, as in the prototype; sortable. */
 export function ComparisonTable({ comparison }: { comparison: Comparison }) {
   return (
-    <div className="relative min-w-0 overflow-x-auto">
-      <table className="w-full min-w-[560px] border-collapse text-sm">
-        <caption className="sr-only">
-          Offers ranked by first-year cost with your usage
-        </caption>
-        <thead>
-          <tr className="border-y border-line text-left text-xs text-muted">
-            <th scope="col" className="px-4 py-2 font-semibold">
-              #
-            </th>
-            <th scope="col" className="px-2 py-2 font-semibold">
-              Supplier
-            </th>
-            <th scope="col" className="px-2 py-2 text-right font-semibold">
-              Year 1
-            </th>
-            <th scope="col" className="px-2 py-2 text-right font-semibold">
-              Year 2
-            </th>
-            <th scope="col" className="px-2 py-2 text-right font-semibold">
-              vs renewal
-            </th>
-            <th scope="col" className="px-4 py-2 font-semibold">
-              Includes
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-line">
-          {comparison.rows.map((row) => (
-            <tr key={row.offerId} className="align-top">
-              <td className="num px-4 py-2.5 text-muted">{row.rank ?? "—"}</td>
-              <td className="px-2 py-2.5">
-                <SupplierCell row={row} />
-              </td>
-              {row.year1Cents !== null ? (
-                <>
-                  <td className="num px-2 py-2.5 text-right font-semibold">
-                    {euros(row.year1Cents)}
-                  </td>
-                  <td className="num px-2 py-2.5 text-right">
-                    {row.year2Cents !== null ? euros(row.year2Cents) : "—"}
-                  </td>
-                  <td className="num px-2 py-2.5 text-right">
-                    <VsRenewal cents={row.vsRenewalCents} />
-                  </td>
-                  <td className="px-4 py-2.5 text-xs text-muted">
-                    {row.status === "excluded"
-                      ? "Excluded by your preference · shown as your baseline"
-                      : row.includes}
-                  </td>
-                </>
-              ) : (
-                <td colSpan={4} className="px-2 py-2.5 text-xs text-muted">
-                  {row.reason}
-                </td>
-              )}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      label="Offers ranked by first-year cost with your usage"
+      prefix="offers"
+      searchPlaceholder="Search supplier or tariff"
+      minWidth="620px"
+      columns={[
+        { key: "rank", label: "#" },
+        {
+          key: "supplier",
+          label: "Supplier",
+          filter: true,
+          filterAll: "All suppliers",
+        },
+        { key: "year1", label: "Year 1", align: "right" },
+        { key: "year2", label: "Year 2", align: "right" },
+        { key: "vs", label: "vs renewal", align: "right" },
+        {
+          key: "status",
+          label: "Includes",
+          filter: true,
+          filterAll: "Any status",
+          sortable: false,
+        },
+      ]}
+      rows={comparison.rows.map((row) => ({
+        key: row.offerId,
+        sort: {
+          rank: row.rank,
+          supplier: row.supplier,
+          year1: row.year1Cents,
+          year2: row.year2Cents,
+          vs: row.vsRenewalCents,
+        },
+        filter: { supplier: row.supplier, status: STATUS_LABEL[row.status] },
+        search: `${row.supplier} ${row.tariffName ?? ""}`,
+        rowClassName: "align-top",
+        cells: {
+          rank: <span className="num text-muted">{row.rank ?? "—"}</span>,
+          supplier: <SupplierCell row={row} />,
+          year1:
+            row.year1Cents !== null ? (
+              <span className="num font-semibold">{euros(row.year1Cents)}</span>
+            ) : (
+              <span className="text-xs text-muted">{row.reason}</span>
+            ),
+          year2: (
+            <span className="num">
+              {row.year2Cents !== null ? euros(row.year2Cents) : "—"}
+            </span>
+          ),
+          vs:
+            row.year1Cents !== null ? (
+              <span className="num">
+                <VsRenewal cents={row.vsRenewalCents} />
+              </span>
+            ) : (
+              "—"
+            ),
+          status: (
+            <span className="text-xs text-muted">
+              {row.year1Cents === null
+                ? STATUS_LABEL[row.status]
+                : row.status === "excluded"
+                  ? "Excluded by your preference · shown as your baseline"
+                  : row.includes}
+            </span>
+          ),
+        },
+      }))}
+    />
   );
 }
 

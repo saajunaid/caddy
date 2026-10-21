@@ -15,6 +15,7 @@ import {
   MatchChip,
 } from "@/modules/housing/components/badges";
 import { Suspense } from "react";
+import { DataTable } from "@/components/ui/data-table";
 import {
   NearbyPanel,
   NearbyPanelSkeleton,
@@ -26,6 +27,7 @@ import {
   dayLabel,
   euro,
   place,
+  MATCH_BADGE,
   rentFrom,
 } from "@/modules/housing/display";
 import {
@@ -67,68 +69,73 @@ function Overview({
     ? daysBetween(today, listing.closing_date)
     : null;
   const rent = rentFrom(listing);
-  const th =
-    "border-b border-line px-3 py-2.5 text-left text-[0.72rem] font-semibold tracking-[0.06em] whitespace-nowrap text-muted uppercase";
-  const td = "border-b border-line px-3 py-[11px]";
   return (
     <div className="grid gap-[22px] min-[900px]:grid-cols-[1.35fr_1fr] [&>*]:min-w-0">
       <div className="grid content-start gap-3">
-        <Card className="overflow-x-auto">
-          <table className="w-full border-collapse text-[0.88rem]">
-            <thead>
-              <tr>
-                <th scope="col" className={th}>
-                  Home type
-                </th>
-                <th scope="col" className={`${th} text-right`}>
-                  Rent / month
-                </th>
-                <th scope="col" className={`${th} text-right`}>
-                  Homes
-                </th>
-                <th scope="col" className={th}>
-                  Match
-                </th>
-              </tr>
-            </thead>
-            <tbody className="[&>tr:last-child>td]:border-b-0">
-              {listing.unit_types.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className={`${td} text-muted`}>
-                    The listing doesn&apos;t say which homes are available.
-                  </td>
-                </tr>
-              ) : (
-                listing.unit_types.map((unit, i) => (
-                  <tr key={`${unit.label}-${i}`}>
-                    <td className={td}>{unit.label}</td>
-                    <td className={`${td} num text-right font-semibold`}>
-                      {unit.rent_cents !== null ? (
-                        euro(unit.rent_cents)
-                      ) : (
-                        <NotStated />
-                      )}
-                    </td>
-                    <td className={`${td} num text-right`}>
-                      {unit.homes !== null ? unit.homes : <NotStated />}
-                    </td>
-                    <td className={td}>
-                      <MatchChip
-                        level={
-                          unit.bedrooms === null
-                            ? summaryAllows
-                              ? "possible"
-                              : "none"
-                            : unitMatch(unit)
-                        }
-                      />
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </Card>
+        {listing.unit_types.length === 0 ? (
+          <Card className="px-4 py-3 text-muted">
+            The listing doesn&apos;t say which homes are available.
+          </Card>
+        ) : (
+          <DataTable
+            label="Home types"
+            prefix="units"
+            searchable={false}
+            columns={[
+              { key: "type", label: "Home type" },
+              { key: "rent", label: "Rent / month", align: "right" },
+              {
+                key: "homes",
+                label: "Homes",
+                align: "right",
+                firstDir: "desc",
+              },
+              {
+                key: "match",
+                label: "Match",
+                filter: true,
+                filterAll: "Any match",
+              },
+            ]}
+            rows={listing.unit_types.map((unit, i) => {
+              const level =
+                unit.bedrooms === null
+                  ? summaryAllows
+                    ? "possible"
+                    : "none"
+                  : unitMatch(unit);
+              const matchLabel = MATCH_BADGE[level].label;
+              return {
+                key: `${unit.label}-${i}`,
+                sort: {
+                  type: unit.bedrooms ?? unit.label,
+                  rent: unit.rent_cents,
+                  homes: unit.homes,
+                  match: matchLabel,
+                },
+                filter: { match: matchLabel },
+                cells: {
+                  type: unit.label,
+                  rent:
+                    unit.rent_cents !== null ? (
+                      <span className="num font-semibold">
+                        {euro(unit.rent_cents)}
+                      </span>
+                    ) : (
+                      <NotStated />
+                    ),
+                  homes:
+                    unit.homes !== null ? (
+                      <span className="num">{unit.homes}</span>
+                    ) : (
+                      <NotStated />
+                    ),
+                  match: <MatchChip level={level} />,
+                },
+              };
+            })}
+          />
+        )}
         {listing.unit_types_from_summary ? (
           <p className={note}>
             This listing has no table of homes, so these sizes come from its
