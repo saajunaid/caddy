@@ -10,12 +10,16 @@ Stack: Next.js + TypeScript on Vercel, Supabase (Postgres, Auth, Storage), GitHu
 
 ## Run it locally
 
-Requires Node 22 and pnpm 10 (`corepack enable` installs the pinned pnpm).
+Full step-by-step guide (local Supabase in Docker, your local login, working with Claude Code):
+**[docs/LOCAL_DEV.md](docs/LOCAL_DEV.md)**.
+
+Short version (Node 22, pnpm 10 via `corepack enable`, Docker running):
 
 ```bash
 pnpm install
-cp .env.example .env.local   # fill in the Supabase URL and publishable key
-pnpm dev                     # http://localhost:3000
+pnpm exec supabase start          # local database with every migration applied
+pnpm exec supabase status -o env  # copy API_URL / PUBLISHABLE_KEY / SECRET_KEY into .env.local
+pnpm dev                          # http://localhost:3000
 ```
 
 ## Checks (CI runs the same)
