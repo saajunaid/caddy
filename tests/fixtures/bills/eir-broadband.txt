@@ -1,0 +1,14 @@
+eir
+Your eir bill
+eir.ie
+Account No. 2345 6789
+Bill Number 0099182736
+Bill Date 02 Oct 2026
+eir Broadband & Talk
+Monthly charges 01/10/26 - 31/10/26
+eir Fibre Broadband €45.00
+Total charges this bill €45.00
+VAT @ 23% (included above) €8.41
+Amount Due €45.00
+Payment due by 16 Oct 2026
+Pay by Direct Debit, at eir.ie or by phone

@@ -1,0 +1,19 @@
+Energia
+Electricity Statement
+Energia Customer Services, Mill House, Dublin
+Account No. 55520071
+Invoice Number INV-7781-2026
+Bill Date 5 October 2026
+Billing Period 01 September 2026 to 30 September 2026
+MPRN 10 304 958 112
+Smart Saver tariff
+Unit type Units Rate Amount
+Day 380 kWh €0.3420/kWh €129.96
+Night 260 kWh €0.1710/kWh €44.46
+Peak 45 kWh €0.3990/kWh €17.96
+Standing Charge 30 days €23.01
+Charges before VAT €215.39
+VAT 9% €19.39
+Total Due €234.78
+Amount will be debited on 19/10/2026
+Thank you for choosing energia.ie

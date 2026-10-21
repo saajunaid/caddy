@@ -1,0 +1,28 @@
+electric ireland
+Electricity Bill
+Electric Ireland, PO Box 841, Cork
+Mr A Customer
+1 Sample Terrace
+Ballysample, Co. Limerick
+Account Number 9 1234 4821
+Invoice No. EI2026100347
+Bill Date 03 Oct 2026
+Billing Period 01/09/2026 - 30/09/2026
+MPRN 10 012 345 678
+Meter type: Smart meter - Smart time of use
+Your bill at a glance
+Previous bill €188.92
+Payment received - thank you €188.92
+Charges this period
+Day Units 412 kWh @ 37.12c per kWh €152.93
+Night Units 288 kWh @ 19.85c per kWh €57.17
+Peak Units 51 kWh @ 42.10c per kWh €21.47
+Standing Charge 30 days @ €0.8273 per day €24.82
+Electricity Credit -€61.45
+Total charges excluding VAT €194.94
+VAT @ 9% on €194.94 €17.54
+Total Amount Due €212.48
+This amount will be collected by Direct Debit on or after 20 Oct 2026
+Payment due date 20/10/2026
+ESB Networks emergency line - see electricireland.ie for details
+Electric Ireland is a trading name of ESB Energy Ltd.

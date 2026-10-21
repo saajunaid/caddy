@@ -52,6 +52,209 @@ export type Database = {
           },
         ];
       };
+      document_extractions: {
+        Row: {
+          candidates: NonNullable<Json>;
+          confidence: NonNullable<Json>;
+          created_at: string;
+          created_by: string | null;
+          document_id: string;
+          extractor: string;
+          extractor_version: string;
+          household_id: string;
+          id: string;
+          proposed: NonNullable<Json>;
+          snippets: NonNullable<Json>;
+          text_chars: number;
+          text_source: string;
+          warnings: string[];
+        };
+        Insert: {
+          candidates?: NonNullable<Json>;
+          confidence?: NonNullable<Json>;
+          created_at?: string;
+          created_by?: string | null;
+          document_id: string;
+          extractor: string;
+          extractor_version: string;
+          household_id: string;
+          id?: string;
+          proposed?: NonNullable<Json>;
+          snippets?: NonNullable<Json>;
+          text_chars?: number;
+          text_source: string;
+          warnings?: string[];
+        };
+        Update: {
+          candidates?: NonNullable<Json>;
+          confidence?: NonNullable<Json>;
+          created_at?: string;
+          created_by?: string | null;
+          document_id?: string;
+          extractor?: string;
+          extractor_version?: string;
+          household_id?: string;
+          id?: string;
+          proposed?: NonNullable<Json>;
+          snippets?: NonNullable<Json>;
+          text_chars?: number;
+          text_source?: string;
+          warnings?: string[];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "document_extractions_document_id_household_id_fkey";
+            columns: ["document_id", "household_id"];
+            isOneToOne: false;
+            referencedRelation: "documents";
+            referencedColumns: ["id", "household_id"];
+          },
+          {
+            foreignKeyName: "document_extractions_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      document_links: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          document_id: string;
+          entity_id: string;
+          entity_type: string;
+          household_id: string;
+          id: string;
+          purpose: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          document_id: string;
+          entity_id: string;
+          entity_type: string;
+          household_id: string;
+          id?: string;
+          purpose: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          document_id?: string;
+          entity_id?: string;
+          entity_type?: string;
+          household_id?: string;
+          id?: string;
+          purpose?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "document_links_document_id_household_id_fkey";
+            columns: ["document_id", "household_id"];
+            isOneToOne: false;
+            referencedRelation: "documents";
+            referencedColumns: ["id", "household_id"];
+          },
+          {
+            foreignKeyName: "document_links_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      documents: {
+        Row: {
+          confirmed_at: string | null;
+          confirmed_by: string | null;
+          confirmed_fields: string[];
+          created_at: string;
+          currency: string;
+          details: NonNullable<Json>;
+          document_date: string | null;
+          document_type: string | null;
+          due_date: string | null;
+          household_id: string;
+          id: string;
+          mime_type: string;
+          original_filename: string;
+          period_end: string | null;
+          period_start: string | null;
+          review_status: string;
+          sha256: string;
+          size_bytes: number;
+          storage_path: string;
+          supplier: string | null;
+          total_cents: number | null;
+          updated_at: string;
+          uploaded_by: string | null;
+          vat_cents: number | null;
+        };
+        Insert: {
+          confirmed_at?: string | null;
+          confirmed_by?: string | null;
+          confirmed_fields?: string[];
+          created_at?: string;
+          currency?: string;
+          details?: NonNullable<Json>;
+          document_date?: string | null;
+          document_type?: string | null;
+          due_date?: string | null;
+          household_id: string;
+          id?: string;
+          mime_type: string;
+          original_filename: string;
+          period_end?: string | null;
+          period_start?: string | null;
+          review_status?: string;
+          sha256: string;
+          size_bytes: number;
+          storage_path: string;
+          supplier?: string | null;
+          total_cents?: number | null;
+          updated_at?: string;
+          uploaded_by?: string | null;
+          vat_cents?: number | null;
+        };
+        Update: {
+          confirmed_at?: string | null;
+          confirmed_by?: string | null;
+          confirmed_fields?: string[];
+          created_at?: string;
+          currency?: string;
+          details?: NonNullable<Json>;
+          document_date?: string | null;
+          document_type?: string | null;
+          due_date?: string | null;
+          household_id?: string;
+          id?: string;
+          mime_type?: string;
+          original_filename?: string;
+          period_end?: string | null;
+          period_start?: string | null;
+          review_status?: string;
+          sha256?: string;
+          size_bytes?: number;
+          storage_path?: string;
+          supplier?: string | null;
+          total_cents?: number | null;
+          updated_at?: string;
+          uploaded_by?: string | null;
+          vat_cents?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "documents_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       events: {
         Row: {
           all_day: boolean;
@@ -116,6 +319,75 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "events_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      expenses: {
+        Row: {
+          amount_cents: number;
+          category: string;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          document_id: string | null;
+          expense_date: string;
+          household_id: string;
+          id: string;
+          is_recurring: boolean;
+          merchant: string;
+          notes: string | null;
+          payment_status: string;
+          review_status: string;
+          updated_at: string;
+        };
+        Insert: {
+          amount_cents: number;
+          category: string;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          document_id?: string | null;
+          expense_date: string;
+          household_id: string;
+          id?: string;
+          is_recurring?: boolean;
+          merchant: string;
+          notes?: string | null;
+          payment_status?: string;
+          review_status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          amount_cents?: number;
+          category?: string;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          document_id?: string | null;
+          expense_date?: string;
+          household_id?: string;
+          id?: string;
+          is_recurring?: boolean;
+          merchant?: string;
+          notes?: string | null;
+          payment_status?: string;
+          review_status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "expenses_document_id_household_id_fkey";
+            columns: ["document_id", "household_id"];
+            isOneToOne: false;
+            referencedRelation: "documents";
+            referencedColumns: ["id", "household_id"];
+          },
+          {
+            foreignKeyName: "expenses_household_id_fkey";
             columns: ["household_id"];
             isOneToOne: false;
             referencedRelation: "households";
@@ -1411,6 +1683,173 @@ export type Database = {
           },
         ];
       };
+      tax_evidence_items: {
+        Row: {
+          category: string;
+          created_at: string;
+          created_by: string | null;
+          document_id: string | null;
+          expense_id: string | null;
+          household_id: string;
+          id: string;
+          member_id: string;
+          notes: string | null;
+          paid_cents: number;
+          share_percent: number;
+          tax_year_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          category: string;
+          created_at?: string;
+          created_by?: string | null;
+          document_id?: string | null;
+          expense_id?: string | null;
+          household_id: string;
+          id?: string;
+          member_id: string;
+          notes?: string | null;
+          paid_cents: number;
+          share_percent?: number;
+          tax_year_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          category?: string;
+          created_at?: string;
+          created_by?: string | null;
+          document_id?: string | null;
+          expense_id?: string | null;
+          household_id?: string;
+          id?: string;
+          member_id?: string;
+          notes?: string | null;
+          paid_cents?: number;
+          share_percent?: number;
+          tax_year_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tax_evidence_items_document_id_household_id_fkey";
+            columns: ["document_id", "household_id"];
+            isOneToOne: false;
+            referencedRelation: "documents";
+            referencedColumns: ["id", "household_id"];
+          },
+          {
+            foreignKeyName: "tax_evidence_items_expense_id_household_id_fkey";
+            columns: ["expense_id", "household_id"];
+            isOneToOne: false;
+            referencedRelation: "expenses";
+            referencedColumns: ["id", "household_id"];
+          },
+          {
+            foreignKeyName: "tax_evidence_items_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tax_evidence_items_member_id_household_id_fkey";
+            columns: ["member_id", "household_id"];
+            isOneToOne: false;
+            referencedRelation: "household_members";
+            referencedColumns: ["id", "household_id"];
+          },
+          {
+            foreignKeyName: "tax_evidence_items_tax_year_id_household_id_fkey";
+            columns: ["tax_year_id", "household_id"];
+            isOneToOne: false;
+            referencedRelation: "tax_years";
+            referencedColumns: ["id", "household_id"];
+          },
+        ];
+      };
+      tax_rules: {
+        Row: {
+          created_at: string;
+          id: string;
+          jurisdiction: string;
+          official_source_url: string;
+          reviewed_on: string;
+          rule_code: string;
+          rule_json: NonNullable<Json>;
+          status: string;
+          tax_year_from: number;
+          tax_year_to: number | null;
+          version: number;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          jurisdiction: string;
+          official_source_url: string;
+          reviewed_on: string;
+          rule_code: string;
+          rule_json: NonNullable<Json>;
+          status?: string;
+          tax_year_from: number;
+          tax_year_to?: number | null;
+          version: number;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          jurisdiction?: string;
+          official_source_url?: string;
+          reviewed_on?: string;
+          rule_code?: string;
+          rule_json?: NonNullable<Json>;
+          status?: string;
+          tax_year_from?: number;
+          tax_year_to?: number | null;
+          version?: number;
+        };
+        Relationships: [];
+      };
+      tax_years: {
+        Row: {
+          created_at: string;
+          household_id: string;
+          id: string;
+          jurisdiction: string;
+          notes: string | null;
+          status: string;
+          updated_at: string;
+          year: number;
+        };
+        Insert: {
+          created_at?: string;
+          household_id: string;
+          id?: string;
+          jurisdiction?: string;
+          notes?: string | null;
+          status?: string;
+          updated_at?: string;
+          year: number;
+        };
+        Update: {
+          created_at?: string;
+          household_id?: string;
+          id?: string;
+          jurisdiction?: string;
+          notes?: string | null;
+          status?: string;
+          updated_at?: string;
+          year?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tax_years_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       trip_candidates: {
         Row: {
           created_at: string;
@@ -1920,6 +2359,57 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "households";
             referencedColumns: ["id"];
+          },
+        ];
+      };
+      wfh_days: {
+        Row: {
+          created_at: string;
+          days: number;
+          household_id: string;
+          id: string;
+          member_id: string;
+          month: number;
+          tax_year: number;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          days: number;
+          household_id: string;
+          id?: string;
+          member_id: string;
+          month: number;
+          tax_year: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          days?: number;
+          household_id?: string;
+          id?: string;
+          member_id?: string;
+          month?: number;
+          tax_year?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "wfh_days_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "wfh_days_member_id_household_id_fkey";
+            columns: ["member_id", "household_id"];
+            isOneToOne: false;
+            referencedRelation: "household_members";
+            referencedColumns: ["id", "household_id"];
           },
         ];
       };
