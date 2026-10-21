@@ -133,7 +133,7 @@ describe("NearbyView", () => {
     expect(within(halal).getByText("Hidden (1)")).toBeInTheDocument();
     expect(
       within(halal).getByText(
-        /None found within 5 km on the map. OpenStreetMap often misses these/,
+        /None found within 5 km on the map. Maps often miss these/,
       ),
     ).toBeInTheDocument();
   });

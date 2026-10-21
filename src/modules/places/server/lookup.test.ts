@@ -61,8 +61,13 @@ describe("lookupAnchor", () => {
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(budget.remaining).toBe(0);
     expect(outcomes.map((o) => [o.source, o.status])).toEqual([
-      ["google:halal", "ok"],
+      ["google:childcare", "ok"],
+      ["google:primary", "skipped"],
+      ["google:secondary", "skipped"],
+      ["google:higher", "skipped"],
+      ["google:bus", "skipped"],
       ["google:mosque", "skipped"],
+      ["google:halal", "skipped"],
     ]);
     // An incomplete Google search isn't logged as done, so it's retried later.
     expect(queries.some((q) => q.table === "place_searches")).toBe(false);

@@ -10,6 +10,7 @@ import { EIRCODE, GeocodeError, geocode } from "./nominatim";
 import { CATEGORY_KEYS } from "./server/categories";
 import { isInIreland } from "./server/geo";
 import { googleApiKeyFromEnv } from "./server/google";
+import { activeSources } from "./server/sources";
 import { lookupAnchor, type SourceOutcome } from "./server/lookup";
 import { searchCell } from "./server/refresh";
 
@@ -65,12 +66,12 @@ export async function lookupNearbyAction(
   const admin = createAdminClient();
   let outcomes: SourceOutcome[] = [];
   const now = new Date();
-  // Overpass etiquette: one lookup per location per minute, however often the button is pressed.
+  // Etiquette and cost: one lookup per location per minute, however often the button is pressed.
   const cell = searchCell(anchor);
   const recent = await admin
     .from("place_searches")
     .select("searched_at")
-    .eq("source", "osm")
+    .in("source", ["osm", "google"])
     .eq("latitude", cell.latitude)
     .eq("longitude", cell.longitude)
     .gte("searched_at", new Date(now.getTime() - 60_000).toISOString())
@@ -97,7 +98,7 @@ export async function lookupNearbyAction(
         outcomes = await lookupAnchor(
           admin,
           anchor,
-          googleApiKey ? ["osm", "google"] : ["osm"],
+          activeSources(googleApiKey),
           // Keep the whole request well inside the platform's time limit.
           { googleApiKey, overpassTimeoutMs: 20_000, now },
         );

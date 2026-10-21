@@ -199,7 +199,11 @@ export async function loadNearby(
   }));
   const searched = Boolean(osm?.lastSuccessAt || google?.lastSuccessAt);
   // On demand, a failure can be retried straight away (the job backs off; a person asked).
+  // The main source is Google when it has been used here, otherwise OpenStreetMap.
+  const [mainKey, main] = google
+    ? (["google", google] as const)
+    : (["osm", osm] as const);
   const canRefresh =
-    !osm || osm.status === "failed" || isSearchDue(osm, "osm", now);
+    !main || main.status === "failed" || isSearchDue(main, mainKey, now);
   return { groups, osm, google, searched, canRefresh };
 }

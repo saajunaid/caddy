@@ -240,7 +240,7 @@ function Group({
             ? `None found within ${radius} on the map.`
             : "Not looked up yet."}
           {searched && (group.key === "halal" || group.key === "mosque")
-            ? " OpenStreetMap often misses these; add places you know."
+            ? " Maps often miss these; add places you know."
             : ""}
         </p>
       )}
@@ -352,10 +352,12 @@ export function NearbyView({
             Nearby places haven&apos;t been looked up yet
           </h3>
           <p className="text-sm text-muted">
-            {data.osm?.status === "failed" ? "The last lookup failed. " : ""}
-            Caddy checks OpenStreetMap for childcare, schools, colleges, bus
-            stops, mosques and halal food around this location. It also happens
-            automatically each morning.
+            {(data.google ?? data.osm)?.status === "failed"
+              ? "The last lookup failed. "
+              : ""}
+            Caddy looks up childcare, schools, colleges, bus stops, mosques and
+            halal food around this location. It also happens automatically each
+            morning for homes that match.
           </p>
           <LookupButton anchor={anchor} />
         </div>
@@ -399,13 +401,20 @@ export function NearbyView({
         </div>
         <p className="rounded-r-lg border-l-[3px] border-line bg-sunk px-3 py-2.5 text-[0.82rem] text-muted">
           Distances are straight-line estimates. Being near a school
-          doesn&apos;t guarantee a place. Walking times are estimates. Sources:
-          OpenStreetMap
-          {data.google ? ", Google" : ""} and places you add.
+          doesn&apos;t guarantee a place. Walking times are estimates. Sources:{" "}
+          {[
+            data.google ? "Google Maps" : null,
+            data.osm ? "OpenStreetMap" : null,
+          ]
+            .filter(Boolean)
+            .join(", ") || "map searches"}{" "}
+          and places you add.
         </p>
         <ul className="grid gap-0.5 text-sm">
-          <Freshness name="OpenStreetMap" state={data.osm} now={renderedAt} />
           <Freshness name="Google" state={data.google} now={renderedAt} />
+          {data.osm ? (
+            <Freshness name="OpenStreetMap" state={data.osm} now={renderedAt} />
+          ) : null}
         </ul>
         {data.searched && data.canRefresh ? (
           <LookupButton anchor={anchor} label="Look up again" primary={false} />
