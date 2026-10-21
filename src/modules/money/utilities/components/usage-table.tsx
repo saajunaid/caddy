@@ -31,7 +31,7 @@ export function UsageTable({
     b.period_start.localeCompare(a.period_start),
   );
   return (
-    <div className="overflow-x-auto">
+    <div className="relative min-w-0 overflow-x-auto">
       <table className="w-full min-w-[480px] border-collapse text-sm">
         <caption className="sr-only">Usage per bill period, in kWh</caption>
         <thead>

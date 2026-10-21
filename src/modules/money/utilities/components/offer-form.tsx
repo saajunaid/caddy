@@ -123,7 +123,6 @@ export function OfferForm({
                   name={RATE_FIELD[band]}
                   inputMode="decimal"
                   autoComplete="off"
-                  placeholder="34.20"
                   className="num"
                   defaultValue={v[RATE_FIELD[band]] ?? ""}
                 />

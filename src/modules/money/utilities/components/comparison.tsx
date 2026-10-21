@@ -74,7 +74,7 @@ function SupplierCell({ row }: { row: ComparisonRow }) {
 /** Rank · supplier · year 1 · year 2 · vs renewal · includes, as in the prototype. */
 export function ComparisonTable({ comparison }: { comparison: Comparison }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="relative min-w-0 overflow-x-auto">
       <table className="w-full min-w-[560px] border-collapse text-sm">
         <caption className="sr-only">
           Offers ranked by first-year cost with your usage
