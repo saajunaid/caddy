@@ -1,0 +1,51 @@
+name: Weekly jobs
+
+# Runs every job in the "weekly" group (see src/server/jobs/registry.ts) on Monday mornings.
+# GitHub runs cron in UTC and can start late; each job's idempotency key uses the ISO week of
+# the Dublin date, so a late or repeated run never does the same week's work twice.
+on:
+  schedule:
+    - cron: "7 7 * * 1"
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "Run a single job by type (leave empty for all weekly jobs)"
+        required: false
+        type: string
+
+concurrency:
+  group: weekly-jobs
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  # The project URL is public (it's in the app's browser code); only the key is secret.
+  SUPABASE_URL: https://mpjudoybbrsyprxflwxy.supabase.co
+  APP_URL: https://caddy-beryl.vercel.app
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Run jobs
+        env:
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_PROD_SECRET_KEY }}
+          GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+          JOB_TRIGGER: ${{ github.event_name == 'workflow_dispatch' && 'manual' || 'schedule' }}
+          ONE_JOB: ${{ inputs.job }}
+        run: |
+          if [ -n "$ONE_JOB" ]; then
+            node --experimental-strip-types scripts/jobs/run.ts job "$ONE_JOB"
+          else
+            node --experimental-strip-types scripts/jobs/run.ts weekly
+          fi

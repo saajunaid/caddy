@@ -12,6 +12,9 @@ export type JobHealth = {
 
 const LABELS: Record<string, string> = {
   heartbeat: "Scheduler",
+  "family-reminders": "Family reminders",
+  "fx-ecb": "Exchange rates (ECB)",
+  "travel-weekly": "Travel weekly check",
 };
 
 export function jobLabel(jobType: string): string {
