@@ -5,6 +5,7 @@ import { dublinDate } from "../../../server/domain/dates.ts";
 import type { JobDefinition } from "../../../server/jobs/registry.ts";
 import { anchorsFromHousing, type AnchorSource } from "./anchors.ts";
 import { GOOGLE_MAX_CALLS_PER_RUN, googleApiKeyFromEnv } from "./google.ts";
+import { activeSources } from "./sources.ts";
 import { lookupAnchor } from "./lookup.ts";
 import { selectDueAnchors } from "./refresh.ts";
 import { loadSearches, purgeExpiredGoogle } from "./store.ts";
@@ -38,9 +39,7 @@ export function createPlacesRefreshJob(
     async run(ctx, admin) {
       const anchors = await anchorSource(admin as unknown as SupabaseClient);
       const googleApiKey = (deps.googleApiKey ?? googleApiKeyFromEnv)();
-      const sources: ExternalSource[] = googleApiKey
-        ? ["osm", "google"]
-        : ["osm"];
+      const sources: ExternalSource[] = activeSources(googleApiKey);
       const searches = await loadSearches(admin);
       const due = selectDueAnchors(
         anchors,

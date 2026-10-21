@@ -51,7 +51,7 @@ export function LookupButton({
       </button>
       {pending ? (
         <p role="status" className="text-sm text-muted">
-          Asking OpenStreetMap. This can take up to a minute.
+          Looking up nearby places. This can take up to a minute.
         </p>
       ) : null}
       {!pending && state.status === "failed" ? (

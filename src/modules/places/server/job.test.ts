@@ -181,18 +181,17 @@ describe("places-refresh job", () => {
     expect(t.fetch).toHaveBeenCalledTimes(MAX_ANCHORS_PER_RUN);
   });
 
-  it("uses Google only for halal and mosques, and caps calls at 40 per run", async () => {
+  it("uses Google for every category instead of OpenStreetMap, capped at 70 calls per run", async () => {
     const t = setup({ anchors: anchors(15), googleKey: "key" });
     await t.run();
-    const googleCalls = t.fetch.mock.calls.filter(([url]) =>
-      String(url).includes("googleapis"),
-    );
-    expect(googleCalls).toHaveLength(30);
-    const queries = googleCalls.map(
+    const calls = t.fetch.mock.calls.map(([url]) => String(url));
+    expect(calls.every((url) => url.includes("googleapis"))).toBe(true);
+    expect(calls).toHaveLength(70);
+    const queries = t.fetch.mock.calls.map(
       ([, init]) => JSON.parse(String(init?.body)).textQuery,
     );
-    expect(new Set(queries)).toEqual(new Set(["halal restaurant", "mosque"]));
-    expect(GOOGLE_MAX_CALLS_PER_RUN).toBe(40);
+    expect(new Set(queries).size).toBe(7);
+    expect(GOOGLE_MAX_CALLS_PER_RUN).toBe(70);
   });
 
   it("fails the run loudly when the anchor source is unavailable", async () => {

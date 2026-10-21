@@ -1,5 +1,5 @@
-// Optional Google Places (New) Text Search adapter for halal food and mosques.
-// Enabled only when GOOGLE_PLACES_API_KEY is set. Runs in plain Node and in the app.
+// Google Places (New) Text Search adapter: the main source for every nearby category.
+// Enabled when GOOGLE_PLACES_API_KEY is set (otherwise lookups fall back to OpenStreetMap). Runs in plain Node and in the app.
 import { z } from "zod";
 import { categoryDef, type CategoryKey } from "./categories.ts";
 import { haversineM, type LatLon } from "./geo.ts";
@@ -16,17 +16,52 @@ export const GOOGLE_SEARCH_URL =
 export const GOOGLE_FIELD_MASK =
   "places.id,places.displayName,places.location,places.formattedAddress,places.googleMapsUri";
 
-/** Google is only used where OpenStreetMap is weakest. */
-export const GOOGLE_QUERIES: readonly {
-  category: Extract<CategoryKey, "halal" | "mosque">;
+export type GoogleQuery = {
+  category: CategoryKey;
   textQuery: string;
-}[] = [
+  /** Places (New) type; with strict filtering only places of this type come back. */
+  includedType?: string;
+  strict?: boolean;
+};
+
+/** One Text Search per category (7 calls per location). Public OpenStreetMap mirrors timed out
+ * from GitHub Actions in Oct 2026, so Google is the default source (PLAN D27). */
+export const GOOGLE_QUERIES: readonly GoogleQuery[] = [
+  { category: "childcare", textQuery: "creche preschool childcare" },
+  {
+    category: "primary",
+    textQuery: "primary school",
+    includedType: "primary_school",
+    strict: true,
+  },
+  {
+    category: "secondary",
+    textQuery: "secondary school",
+    includedType: "secondary_school",
+    strict: true,
+  },
+  {
+    category: "higher",
+    textQuery: "university college",
+    includedType: "university",
+  },
+  {
+    category: "bus",
+    textQuery: "bus stop",
+    includedType: "bus_stop",
+    strict: true,
+  },
+  {
+    category: "mosque",
+    textQuery: "mosque",
+    includedType: "mosque",
+    strict: true,
+  },
   { category: "halal", textQuery: "halal restaurant" },
-  { category: "mosque", textQuery: "mosque" },
 ];
 
 /** Hard cap on Google calls per scheduled run (keeps the monthly free allowance safe). */
-export const GOOGLE_MAX_CALLS_PER_RUN = 40;
+export const GOOGLE_MAX_CALLS_PER_RUN = 70;
 
 /** Google's terms: place ids may be kept; other fields must be refreshed within 30 days. */
 export const GOOGLE_CACHE_DAYS = 30;
@@ -51,7 +86,7 @@ const responseSchema = z.object({ places: z.array(z.unknown()).optional() });
 export function parseGoogle(
   json: unknown,
   center: LatLon,
-  category: Extract<CategoryKey, "halal" | "mosque">,
+  category: CategoryKey,
   textQuery: string,
 ): { candidates: PlaceCandidate[]; parsed: number } {
   const { places = [] } = responseSchema.parse(json);
@@ -95,7 +130,7 @@ export type GoogleOptions = {
 /** One Text Search call biased to a circle around the location. */
 export async function searchGoogle(
   center: LatLon,
-  query: (typeof GOOGLE_QUERIES)[number],
+  query: GoogleQuery,
   options: GoogleOptions,
 ): Promise<AdapterResult> {
   const doFetch = options.fetch ?? fetch;
@@ -109,6 +144,12 @@ export async function searchGoogle(
       },
       body: JSON.stringify({
         textQuery: query.textQuery,
+        ...(query.includedType
+          ? {
+              includedType: query.includedType,
+              strictTypeFiltering: Boolean(query.strict),
+            }
+          : {}),
         pageSize: 20,
         regionCode: "IE",
         locationBias: {

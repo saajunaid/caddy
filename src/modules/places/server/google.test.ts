@@ -41,10 +41,15 @@ describe("field mask", () => {
     expect(GOOGLE_FIELD_MASK).not.toMatch(/rating|review/i);
   });
 
-  it("searches only halal food and mosques", () => {
+  it("searches every category once", () => {
     expect(GOOGLE_QUERIES.map((q) => q.category).sort()).toEqual([
+      "bus",
+      "childcare",
       "halal",
+      "higher",
       "mosque",
+      "primary",
+      "secondary",
     ]);
   });
 });
