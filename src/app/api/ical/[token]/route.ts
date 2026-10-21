@@ -29,6 +29,13 @@ function notFound() {
   });
 }
 
+function unavailable() {
+  return new Response("Feed temporarily unavailable", {
+    status: 503,
+    headers: { "retry-after": "600", "cache-control": "no-store" },
+  });
+}
+
 /**
  * Private calendar feed (public URL, secret token). The proxy doesn't run on /api/*, so this
  * handler authenticates by looking up the token's hash; the household comes only from that row.
@@ -40,7 +47,12 @@ export async function GET(
   const token = parseFeedToken((await ctx.params).token);
   if (!token) return notFound();
 
-  const admin = createAdminClient();
+  let admin: ReturnType<typeof createAdminClient>;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return unavailable();
+  }
   const found = await admin
     .from("ical_tokens")
     .select("id, household_id, last_used_at")
@@ -48,10 +60,7 @@ export async function GET(
     .is("revoked_at", null)
     .maybeSingle();
   if (found.error) {
-    return new Response("Feed temporarily unavailable", {
-      status: 503,
-      headers: { "retry-after": "600", "cache-control": "no-store" },
-    });
+    return unavailable();
   }
   if (!found.data) return notFound();
   const householdId = found.data.household_id;
@@ -83,10 +92,7 @@ export async function GET(
       .limit(5000),
   ]);
   if (events.error || tasks.error) {
-    return new Response("Feed temporarily unavailable", {
-      status: 503,
-      headers: { "retry-after": "600", "cache-control": "no-store" },
-    });
+    return unavailable();
   }
 
   // Repeats are expanded into single events with UTC times, so they stay at the right

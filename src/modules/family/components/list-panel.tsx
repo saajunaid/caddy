@@ -50,7 +50,9 @@ export function ListPanel({
         {heading ?? (
           <h2 className="text-[1.05rem] font-semibold">{list.name}</h2>
         )}
-        <WhatsAppButton text={listShareText(list.name, list.items)} />
+        {open > 0 ? (
+          <WhatsAppButton text={listShareText(list.name, list.items)} />
+        ) : null}
       </div>
       {list.items.length === 0 ? (
         <p className="px-4 py-2 text-sm text-muted">

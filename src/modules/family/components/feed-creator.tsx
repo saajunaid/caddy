@@ -79,7 +79,7 @@ export function FeedCreator() {
           id="feed-label"
           name="label"
           maxLength={60}
-          placeholder="e.g. Junaid's iPhone"
+          placeholder="e.g. My iPhone"
           className={`${inputClass} flex-1 basis-48`}
         />
         <button type="submit" disabled={pending} className={primaryButtonClass}>

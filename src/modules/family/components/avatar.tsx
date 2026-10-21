@@ -1,6 +1,6 @@
 import { initials } from "../server/people.ts";
 
-/** Initials in a small circle, e.g. "J" for Junaid. */
+/** Initials in a small circle, e.g. "S" for Sam. */
 export function Avatar({ name }: { name: string }) {
   return (
     <span

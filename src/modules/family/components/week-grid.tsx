@@ -73,7 +73,7 @@ function Entry({
             : "block"
         }
       >
-        {entry.kind === "task" ? `Due: ${entry.title}` : entry.title}
+        {entry.title}
       </span>
       {who ? <span className="block text-xs text-muted">{who}</span> : null}
       {entry.kind === "event"
