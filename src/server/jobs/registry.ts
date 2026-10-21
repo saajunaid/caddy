@@ -6,6 +6,7 @@ import { dublinDate } from "../domain/dates.ts";
 import type { JobContext } from "./runner.ts";
 import { familyReminders } from "../../modules/family/server/reminders-job.ts";
 import { fxEcbJob, travelWeeklyJob } from "../../modules/travel/server/jobs.ts";
+import { utilitiesDueJob } from "../../modules/money/utilities/server/job.ts";
 
 export type JobGroup = "daily" | "weekly";
 
@@ -45,4 +46,5 @@ export const JOBS: readonly JobDefinition[] = [
   familyReminders,
   fxEcbJob,
   travelWeeklyJob,
+  utilitiesDueJob,
 ];

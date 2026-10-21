@@ -728,6 +728,105 @@ export type Database = {
           },
         ];
       };
+      tariff_offers: {
+        Row: {
+          cashback_cents: number;
+          checked_on: string;
+          contract_id: string;
+          created_at: string;
+          day_rate_cents: number | null;
+          decision: string | null;
+          discount_includes_standing: boolean;
+          discount_months: number;
+          discount_percent: number;
+          exit_fee_cents: number;
+          gas_rate_cents: number | null;
+          household_id: string;
+          id: string;
+          is_current_renewal: boolean;
+          night_rate_cents: number | null;
+          notes: string | null;
+          peak_rate_cents: number | null;
+          source_url: string | null;
+          standard_rate_cents: number | null;
+          standing_charge_cents_per_year: number;
+          supplier: string;
+          tariff_name: string | null;
+          updated_at: string;
+          utility_type: string;
+          vat_percent: number;
+        };
+        Insert: {
+          cashback_cents?: number;
+          checked_on: string;
+          contract_id: string;
+          created_at?: string;
+          day_rate_cents?: number | null;
+          decision?: string | null;
+          discount_includes_standing?: boolean;
+          discount_months?: number;
+          discount_percent?: number;
+          exit_fee_cents?: number;
+          gas_rate_cents?: number | null;
+          household_id: string;
+          id?: string;
+          is_current_renewal?: boolean;
+          night_rate_cents?: number | null;
+          notes?: string | null;
+          peak_rate_cents?: number | null;
+          source_url?: string | null;
+          standard_rate_cents?: number | null;
+          standing_charge_cents_per_year?: number;
+          supplier: string;
+          tariff_name?: string | null;
+          updated_at?: string;
+          utility_type: string;
+          vat_percent?: number;
+        };
+        Update: {
+          cashback_cents?: number;
+          checked_on?: string;
+          contract_id?: string;
+          created_at?: string;
+          day_rate_cents?: number | null;
+          decision?: string | null;
+          discount_includes_standing?: boolean;
+          discount_months?: number;
+          discount_percent?: number;
+          exit_fee_cents?: number;
+          gas_rate_cents?: number | null;
+          household_id?: string;
+          id?: string;
+          is_current_renewal?: boolean;
+          night_rate_cents?: number | null;
+          notes?: string | null;
+          peak_rate_cents?: number | null;
+          source_url?: string | null;
+          standard_rate_cents?: number | null;
+          standing_charge_cents_per_year?: number;
+          supplier?: string;
+          tariff_name?: string | null;
+          updated_at?: string;
+          utility_type?: string;
+          vat_percent?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tariff_offers_household_id_contract_id_fkey";
+            columns: ["household_id", "contract_id"];
+            isOneToOne: false;
+            referencedRelation: "utility_contracts";
+            referencedColumns: ["household_id", "id"];
+          },
+          {
+            foreignKeyName: "tariff_offers_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       tasks: {
         Row: {
           assignee_member_id: string | null;
@@ -1103,6 +1202,217 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "trips_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      utility_comparisons: {
+        Row: {
+          contract_end: string | null;
+          contract_id: string;
+          created_at: string;
+          created_by: string | null;
+          dedupe_key: string | null;
+          household_id: string;
+          id: string;
+          results: NonNullable<Json>;
+          trigger: string;
+          usage_basis: NonNullable<Json>;
+        };
+        Insert: {
+          contract_end?: string | null;
+          contract_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          dedupe_key?: string | null;
+          household_id: string;
+          id?: string;
+          results?: NonNullable<Json>;
+          trigger: string;
+          usage_basis?: NonNullable<Json>;
+        };
+        Update: {
+          contract_end?: string | null;
+          contract_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          dedupe_key?: string | null;
+          household_id?: string;
+          id?: string;
+          results?: NonNullable<Json>;
+          trigger?: string;
+          usage_basis?: NonNullable<Json>;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "utility_comparisons_household_id_contract_id_fkey";
+            columns: ["household_id", "contract_id"];
+            isOneToOne: false;
+            referencedRelation: "utility_contracts";
+            referencedColumns: ["household_id", "id"];
+          },
+          {
+            foreignKeyName: "utility_comparisons_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      utility_contracts: {
+        Row: {
+          account_label: string | null;
+          comparison_due_on: string | null;
+          contract_end: string | null;
+          contract_start: string | null;
+          created_at: string;
+          household_id: string;
+          id: string;
+          meter_type: string;
+          notes: string | null;
+          status: string;
+          supplier: string;
+          tariff_name: string | null;
+          updated_at: string;
+          utility_type: string;
+        };
+        Insert: {
+          account_label?: string | null;
+          comparison_due_on?: never;
+          contract_end?: string | null;
+          contract_start?: string | null;
+          created_at?: string;
+          household_id: string;
+          id?: string;
+          meter_type?: string;
+          notes?: string | null;
+          status?: string;
+          supplier: string;
+          tariff_name?: string | null;
+          updated_at?: string;
+          utility_type: string;
+        };
+        Update: {
+          account_label?: string | null;
+          comparison_due_on?: never;
+          contract_end?: string | null;
+          contract_start?: string | null;
+          created_at?: string;
+          household_id?: string;
+          id?: string;
+          meter_type?: string;
+          notes?: string | null;
+          status?: string;
+          supplier?: string;
+          tariff_name?: string | null;
+          updated_at?: string;
+          utility_type?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "utility_contracts_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      utility_preferences: {
+        Row: {
+          created_at: string;
+          excluded_suppliers: string[];
+          household_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          excluded_suppliers?: string[];
+          household_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          excluded_suppliers?: string[];
+          household_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "utility_preferences_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: true;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      utility_usage: {
+        Row: {
+          contract_id: string;
+          created_at: string;
+          day_kwh: number | null;
+          document_id: string | null;
+          gas_kwh: number | null;
+          household_id: string;
+          id: string;
+          night_kwh: number | null;
+          peak_kwh: number | null;
+          period_end: string;
+          period_start: string;
+          source: string;
+          standard_kwh: number | null;
+          total_cents: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          contract_id: string;
+          created_at?: string;
+          day_kwh?: number | null;
+          document_id?: string | null;
+          gas_kwh?: number | null;
+          household_id: string;
+          id?: string;
+          night_kwh?: number | null;
+          peak_kwh?: number | null;
+          period_end: string;
+          period_start: string;
+          source?: string;
+          standard_kwh?: number | null;
+          total_cents?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          contract_id?: string;
+          created_at?: string;
+          day_kwh?: number | null;
+          document_id?: string | null;
+          gas_kwh?: number | null;
+          household_id?: string;
+          id?: string;
+          night_kwh?: number | null;
+          peak_kwh?: number | null;
+          period_end?: string;
+          period_start?: string;
+          source?: string;
+          standard_kwh?: number | null;
+          total_cents?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "utility_usage_household_id_contract_id_fkey";
+            columns: ["household_id", "contract_id"];
+            isOneToOne: false;
+            referencedRelation: "utility_contracts";
+            referencedColumns: ["household_id", "id"];
+          },
+          {
+            foreignKeyName: "utility_usage_household_id_fkey";
             columns: ["household_id"];
             isOneToOne: false;
             referencedRelation: "households";
