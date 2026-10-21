@@ -238,3 +238,96 @@ export function sortItems(items: readonly TodayItem[]): TodayItem[] {
 export function weekDates(today: IsoDate): IsoDate[] {
   return Array.from({ length: 7 }, (_, i) => addDays(today, i));
 }
+
+export type ListingInput = {
+  id: string;
+  title: string;
+  status: string;
+  matches: string;
+  closingDate: IsoDate | null;
+  /** Local date the listing was first seen. */
+  firstSeenOn: IsoDate;
+  /** True once the household has an application past "not applied". */
+  applied: boolean;
+};
+
+/** Matching Cost Rental homes the household hasn't applied for yet. */
+export function listingItems(
+  listings: readonly ListingInput[],
+  today: IsoDate,
+): TodayItem[] {
+  const out: TodayItem[] = [];
+  for (const l of listings) {
+    if (l.applied || l.matches === "none") continue;
+    if (!["open", "closing_soon", "coming_soon"].includes(l.status)) continue;
+    const fit = l.matches === "match" ? "Matches your brief" : "Possible match";
+    const href = `/housing/${l.id}`;
+    const base = { key: `listing:${l.id}`, module: "housing" as const, href };
+    if (l.status === "coming_soon") {
+      out.push({
+        ...base,
+        tone: "info",
+        label: "Opens soon",
+        title: l.title,
+        detail: `${fit} · applications not open yet`,
+        rank: 0,
+      });
+      continue;
+    }
+    const days = l.closingDate ? daysBetween(today, l.closingDate) : null;
+    if (days !== null && days >= 0 && days <= 7) {
+      out.push({
+        ...base,
+        tone: "due",
+        label: days === 0 ? "Closes today" : "Closing soon",
+        title: l.title,
+        detail: `${fit} · closes ${inDays(days)}, ${shortDay(l.closingDate!)}`,
+        rank: days,
+      });
+    } else {
+      const isNew = daysBetween(l.firstSeenOn, today) <= 3;
+      out.push({
+        ...base,
+        tone: "ok",
+        label: isNew ? "New" : "Open",
+        title: l.title,
+        detail: l.closingDate
+          ? `${fit} · closes ${shortDay(l.closingDate)}`
+          : `${fit} · closing date not stated`,
+        rank: isNew ? 0 : 1,
+      });
+    }
+  }
+  return out;
+}
+
+export type ApplicationInput = {
+  listingId: string;
+  listingTitle: string;
+  nextAction: string | null;
+  nextActionDue: IsoDate | null;
+};
+
+/** Application follow-ups that are overdue or due within three days. */
+export function applicationItems(
+  applications: readonly ApplicationInput[],
+  today: IsoDate,
+): TodayItem[] {
+  const out: TodayItem[] = [];
+  for (const a of applications) {
+    if (!a.nextActionDue) continue;
+    const days = daysBetween(today, a.nextActionDue);
+    if (days > 3) continue;
+    out.push({
+      key: `application:${a.listingId}`,
+      module: "housing",
+      tone: days < 0 ? "bad" : "due",
+      label: days < 0 ? "Overdue" : "Follow up",
+      title: a.nextAction?.trim() || `Follow up on ${a.listingTitle}`,
+      detail: `${a.listingTitle} · ${days < 0 ? "was due" : "due"} ${shortDay(a.nextActionDue)}`,
+      href: `/housing/${a.listingId}?tab=application`,
+      rank: days,
+    });
+  }
+  return out;
+}
