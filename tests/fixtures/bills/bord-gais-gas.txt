@@ -1,0 +1,18 @@
+Bord Gáis Energy
+Gas bill
+bordgaisenergy.ie
+Account Number 3001 7766 55
+Bill No. BG50918273
+Bill Issue Date 08/09/2026
+Bill Period 01/07/2026 - 30/08/2026
+GPRN 1234567
+Gas Networks Ireland meter reading 04512 (A)
+Gas used 101 cubic metres x conversion factor 10.93
+Total gas used 1,104 kWh @ 13.86c per kWh €153.01
+Standing Charge 61 days @ €0.3940 per day €24.03
+Carbon Tax 1,104 kWh @ €0.01137 €12.55
+Total before VAT €189.59
+VAT (9%) €17.06
+Total Amount Due €206.65
+Payment due by 24/09/2026
+Bord Gáis Energy is part of the Centrica Group.

@@ -1,0 +1,20 @@
+Flogas
+Dual Fuel Invoice
+Flogas Natural Gas Limited, Knockbrack House, Dublin
+flogas.ie
+Account Number 70044120
+Invoice Number FG-2026-118842
+Invoice Date 12 Aug 2026
+Billing Period 01 Jun 2026 - 31 Jul 2026
+MPRN 10 555 666 777
+GPRN 7654321
+Electricity
+Electricity 24hr Units 650 kWh @ 33.80c €219.70
+Electricity Standing Charge 61 days €17.81
+Gas
+Gas Units 900 kWh @ 12.95c €116.55
+Gas Standing Charge 61 days €21.35
+Sub total €375.41
+VAT @ 9% €33.79
+Total Amount Due €409.20
+Payment due 26/08/2026
