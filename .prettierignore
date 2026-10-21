@@ -5,3 +5,4 @@ public/sw.js
 docs/design/prototype.html
 SPEC.md
 *.md
+tests/fixtures/
