@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 const tabClass =
   "grid h-[var(--nav-h)] place-items-center content-center gap-0.5 text-[0.72rem] font-medium text-muted aria-[current=page]:text-accent";
 
-export function BottomNav() {
+export function BottomNav({ unread = 0 }: { unread?: number }) {
   const pathname = usePathname();
   const active = activeNavItem(pathname);
   const moreActive = isUnderMore(pathname);
@@ -49,9 +49,20 @@ export function BottomNav() {
       <Link
         href={MORE_HREF}
         aria-current={moreActive ? "page" : undefined}
+        aria-label={unread ? `More, ${unread} unread in Inbox` : undefined}
         className={tabClass}
       >
-        <Ellipsis aria-hidden="true" className="size-[22px]" />
+        <span className="relative">
+          <Ellipsis aria-hidden="true" className="size-[22px]" />
+          {unread ? (
+            <span
+              aria-hidden="true"
+              className="num absolute -top-1.5 -right-2.5 grid h-4 min-w-4 place-items-center rounded-full bg-mine px-1 text-[0.62rem] leading-none font-bold text-bg"
+            >
+              {unread > 9 ? "9+" : unread}
+            </span>
+          ) : null}
+        </span>
         More
       </Link>
     </nav>
