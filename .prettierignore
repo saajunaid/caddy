@@ -6,3 +6,4 @@ docs/design/prototype.html
 SPEC.md
 *.md
 .claude
+tests/fixtures/
