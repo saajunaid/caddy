@@ -16,6 +16,10 @@ const LABELS: Record<string, string> = {
   "fx-ecb": "Exchange rates (ECB)",
   "travel-weekly": "Travel weekly check",
   "utilities-due": "Utility contract check",
+  "housing-daily": "Cost Rental check",
+  "housing-news": "Housing news",
+  "places-refresh": "Nearby places",
+  "places-lookup": "Nearby lookup",
 };
 
 export function jobLabel(jobType: string): string {
