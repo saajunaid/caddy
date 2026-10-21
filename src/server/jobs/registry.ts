@@ -5,6 +5,7 @@ import type { Database } from "../../lib/supabase/database.types.ts";
 import { dublinDate } from "../domain/dates.ts";
 import type { JobContext } from "./runner.ts";
 import { familyReminders } from "../../modules/family/server/reminders-job.ts";
+import { fxEcbJob, travelWeeklyJob } from "../../modules/travel/server/jobs.ts";
 
 export type JobGroup = "daily" | "weekly";
 
@@ -39,4 +40,9 @@ const heartbeat: JobDefinition = {
   },
 };
 
-export const JOBS: readonly JobDefinition[] = [heartbeat, familyReminders];
+export const JOBS: readonly JobDefinition[] = [
+  heartbeat,
+  familyReminders,
+  fxEcbJob,
+  travelWeeklyJob,
+];
