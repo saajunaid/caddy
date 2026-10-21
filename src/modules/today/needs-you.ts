@@ -218,7 +218,8 @@ export function failureItem(
     tone: "bad",
     label: "Couldn't load",
     title: `Couldn't load ${what}`,
-    detail: "Try again in a moment. Nothing here means it failed, not that it's clear.",
+    detail:
+      "Try again in a moment. Nothing here means it failed, not that it's clear.",
     href,
     rank: -1_000_000,
   };

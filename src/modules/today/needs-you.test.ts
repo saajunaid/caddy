@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  applicationItems,
   contractItems,
+  listingItems,
   failureItem,
   shortDay,
   sortItems,
@@ -150,5 +152,96 @@ describe("dates", () => {
       "2026-10-26",
       "2026-10-27",
     ]);
+  });
+});
+
+describe("listingItems", () => {
+  const base = {
+    title: "Ard na Sailí",
+    matches: "match",
+    firstSeenOn: "2026-10-01",
+    applied: false,
+  };
+
+  it("shows matching homes by urgency and skips applied, closed and non-matching ones", () => {
+    const items = listingItems(
+      [
+        { ...base, id: "a", status: "closing_soon", closingDate: "2026-10-21" },
+        {
+          ...base,
+          id: "b",
+          status: "open",
+          closingDate: "2026-11-30",
+          firstSeenOn: "2026-10-20",
+        },
+        {
+          ...base,
+          id: "c",
+          status: "coming_soon",
+          closingDate: null,
+          matches: "possible",
+        },
+        { ...base, id: "d", status: "open", closingDate: null },
+        { ...base, id: "e", status: "open", closingDate: null, applied: true },
+        { ...base, id: "f", status: "closed", closingDate: "2026-10-01" },
+        {
+          ...base,
+          id: "g",
+          status: "open",
+          closingDate: null,
+          matches: "none",
+        },
+      ],
+      today,
+    );
+    expect(items.map((i) => [i.key, i.tone, i.label])).toEqual([
+      ["listing:a", "due", "Closes today"],
+      ["listing:b", "ok", "New"],
+      ["listing:c", "info", "Opens soon"],
+      ["listing:d", "ok", "Open"],
+    ]);
+    expect(items[3].detail).toBe(
+      "Matches your brief · closing date not stated",
+    );
+    expect(items[2].detail).toContain("Possible match");
+  });
+});
+
+describe("applicationItems", () => {
+  it("flags follow-ups due within three days or overdue", () => {
+    const items = applicationItems(
+      [
+        {
+          listingId: "a",
+          listingTitle: "A",
+          nextAction: "Send payslips",
+          nextActionDue: "2026-10-20",
+        },
+        {
+          listingId: "b",
+          listingTitle: "B",
+          nextAction: null,
+          nextActionDue: "2026-10-24",
+        },
+        {
+          listingId: "c",
+          listingTitle: "C",
+          nextAction: "Later",
+          nextActionDue: "2026-10-30",
+        },
+        {
+          listingId: "d",
+          listingTitle: "D",
+          nextAction: "No date",
+          nextActionDue: null,
+        },
+      ],
+      today,
+    );
+    expect(items.map((i) => [i.title, i.tone])).toEqual([
+      ["Send payslips", "bad"],
+      ["Follow up on B", "due"],
+    ]);
+    expect(items[0].href).toBe("/housing/a?tab=application");
   });
 });
