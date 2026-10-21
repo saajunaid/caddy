@@ -22,7 +22,9 @@ APP_URL=https://caddy-beryl.vercel.app INGEST_TOKEN=… \
   node --experimental-strip-types scripts/research/ingest.ts result.json
 ```
 
-The script validates the file locally first and prints clear errors. The endpoint:
+The script validates the file locally first and prints clear errors (`--check` validates without
+sending). In a Claude Code cloud session, leave `INGEST_TOKEN` unset: the environment's network
+secret for `caddy-beryl.vercel.app` adds the `Authorization` header, so the agent never sees the token. The endpoint:
 
 - accepts `Authorization: Bearer <token>` where the token is the Supabase secret key, or a separate
   `RESEARCH_INGEST_TOKEN` if one is set in Vercel (recommended, so the agent never holds the

@@ -2,18 +2,23 @@
 //   APP_URL=https://caddy-beryl.vercel.app INGEST_TOKEN=... \
 //     node --experimental-strip-types scripts/research/ingest.ts result.json
 // The file is validated locally first, so mistakes are reported before anything is sent.
+// In a Claude Code cloud session the token can come from a network secret instead: leave
+// INGEST_TOKEN unset and the sandbox proxy adds the Authorization header for the app's host.
+// --check validates the file without sending it.
 import { readFile } from "node:fs/promises";
 import {
   describeIssues,
   researchResultSchema,
 } from "../../src/modules/housing/server/research.ts";
 
-const file = process.argv[2];
+const args = process.argv.slice(2);
+const checkOnly = args.includes("--check");
+const file = args.find((a) => !a.startsWith("--"));
 const appUrl = process.env.APP_URL?.trim().replace(/\/$/, "");
 const token = process.env.INGEST_TOKEN?.trim();
-if (!file || !appUrl || !token) {
+if (!file || (!checkOnly && !appUrl)) {
   console.error(
-    "Usage: APP_URL=https://… INGEST_TOKEN=… node --experimental-strip-types scripts/research/ingest.ts <result.json>",
+    "Usage: APP_URL=https://… [INGEST_TOKEN=…] node --experimental-strip-types scripts/research/ingest.ts [--check] <result.json>",
   );
   process.exit(2);
 }
@@ -35,10 +40,15 @@ if (!parsed.success) {
   process.exit(1);
 }
 
+if (checkOnly) {
+  console.log(`OK: ${parsed.data.items.length} items match the schema.`);
+  process.exit(0);
+}
+
 const response = await fetch(`${appUrl}/api/ingest/research`, {
   method: "POST",
   headers: {
-    authorization: `Bearer ${token}`,
+    ...(token ? { authorization: `Bearer ${token}` } : {}),
     "content-type": "application/json",
   },
   body: JSON.stringify(parsed.data),
