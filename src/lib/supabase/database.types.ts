@@ -52,6 +52,77 @@ export type Database = {
           },
         ];
       };
+      events: {
+        Row: {
+          all_day: boolean;
+          created_at: string;
+          created_by: string | null;
+          end_date: string | null;
+          ends_at: string | null;
+          household_id: string;
+          id: string;
+          location: string | null;
+          member_ids: string[];
+          notes: string | null;
+          recurrence: string;
+          related_entity_id: string | null;
+          related_entity_type: string | null;
+          related_url: string | null;
+          start_date: string | null;
+          starts_at: string;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          all_day?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          end_date?: string | null;
+          ends_at?: string | null;
+          household_id: string;
+          id?: string;
+          location?: string | null;
+          member_ids?: string[];
+          notes?: string | null;
+          recurrence?: string;
+          related_entity_id?: string | null;
+          related_entity_type?: string | null;
+          related_url?: string | null;
+          start_date?: string | null;
+          starts_at: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          all_day?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          end_date?: string | null;
+          ends_at?: string | null;
+          household_id?: string;
+          id?: string;
+          location?: string | null;
+          member_ids?: string[];
+          notes?: string | null;
+          recurrence?: string;
+          related_entity_id?: string | null;
+          related_entity_type?: string | null;
+          related_url?: string | null;
+          start_date?: string | null;
+          starts_at?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "events_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       household_members: {
         Row: {
           created_at: string;
@@ -125,6 +196,47 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      ical_tokens: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          household_id: string;
+          id: string;
+          label: string;
+          last_used_at: string | null;
+          revoked_at: string | null;
+          token_hash: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          household_id: string;
+          id?: string;
+          label?: string;
+          last_used_at?: string | null;
+          revoked_at?: string | null;
+          token_hash: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          household_id?: string;
+          id?: string;
+          label?: string;
+          last_used_at?: string | null;
+          revoked_at?: string | null;
+          token_hash?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ical_tokens_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       job_runs: {
         Row: {
@@ -222,6 +334,98 @@ export type Database = {
             columns: ["job_run_id"];
             isOneToOne: false;
             referencedRelation: "job_runs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      list_items: {
+        Row: {
+          checked: boolean;
+          checked_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          household_id: string;
+          id: string;
+          list_id: string;
+          position: number;
+          text: string;
+          updated_at: string;
+        };
+        Insert: {
+          checked?: boolean;
+          checked_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          household_id: string;
+          id?: string;
+          list_id: string;
+          position?: number;
+          text: string;
+          updated_at?: string;
+        };
+        Update: {
+          checked?: boolean;
+          checked_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          household_id?: string;
+          id?: string;
+          list_id?: string;
+          position?: number;
+          text?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "list_items_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "list_items_household_id_list_id_fkey";
+            columns: ["household_id", "list_id"];
+            isOneToOne: false;
+            referencedRelation: "lists";
+            referencedColumns: ["household_id", "id"];
+          },
+        ];
+      };
+      lists: {
+        Row: {
+          created_at: string;
+          household_id: string;
+          id: string;
+          kind: string;
+          name: string;
+          position: number;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          household_id: string;
+          id?: string;
+          kind?: string;
+          name: string;
+          position?: number;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          household_id?: string;
+          id?: string;
+          kind?: string;
+          name?: string;
+          position?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "lists_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
             referencedColumns: ["id"];
           },
         ];
@@ -361,6 +565,213 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "push_subscriptions_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      school_applications: {
+        Row: {
+          application_deadline: string | null;
+          child_member_id: string;
+          created_at: string;
+          decision_date: string | null;
+          household_id: string;
+          id: string;
+          intake_year: number;
+          notes: string | null;
+          open_day: string | null;
+          preference_rank: number | null;
+          school_id: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          application_deadline?: string | null;
+          child_member_id: string;
+          created_at?: string;
+          decision_date?: string | null;
+          household_id: string;
+          id?: string;
+          intake_year: number;
+          notes?: string | null;
+          open_day?: string | null;
+          preference_rank?: number | null;
+          school_id: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          application_deadline?: string | null;
+          child_member_id?: string;
+          created_at?: string;
+          decision_date?: string | null;
+          household_id?: string;
+          id?: string;
+          intake_year?: number;
+          notes?: string | null;
+          open_day?: string | null;
+          preference_rank?: number | null;
+          school_id?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "school_applications_household_id_child_member_id_fkey";
+            columns: ["household_id", "child_member_id"];
+            isOneToOne: false;
+            referencedRelation: "household_members";
+            referencedColumns: ["household_id", "id"];
+          },
+          {
+            foreignKeyName: "school_applications_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "school_applications_household_id_school_id_fkey";
+            columns: ["household_id", "school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["household_id", "id"];
+          },
+        ];
+      };
+      schools: {
+        Row: {
+          address: string | null;
+          admissions_policy_url: string | null;
+          created_at: string;
+          household_id: string;
+          id: string;
+          latitude: number | null;
+          level: string;
+          longitude: number | null;
+          name: string;
+          notes: string | null;
+          policy_checked_on: string | null;
+          updated_at: string;
+          website: string | null;
+        };
+        Insert: {
+          address?: string | null;
+          admissions_policy_url?: string | null;
+          created_at?: string;
+          household_id: string;
+          id?: string;
+          latitude?: number | null;
+          level: string;
+          longitude?: number | null;
+          name: string;
+          notes?: string | null;
+          policy_checked_on?: string | null;
+          updated_at?: string;
+          website?: string | null;
+        };
+        Update: {
+          address?: string | null;
+          admissions_policy_url?: string | null;
+          created_at?: string;
+          household_id?: string;
+          id?: string;
+          latitude?: number | null;
+          level?: string;
+          longitude?: number | null;
+          name?: string;
+          notes?: string | null;
+          policy_checked_on?: string | null;
+          updated_at?: string;
+          website?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "schools_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tasks: {
+        Row: {
+          assignee_member_id: string | null;
+          completed_at: string | null;
+          completed_by: string | null;
+          created_at: string;
+          created_by: string | null;
+          due_on: string | null;
+          due_time: string | null;
+          household_id: string;
+          id: string;
+          notes: string | null;
+          recurrence: string;
+          recurrence_anchor_on: string | null;
+          recurrence_interval: number;
+          related_entity_id: string | null;
+          related_entity_type: string | null;
+          related_url: string | null;
+          status: string;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          assignee_member_id?: string | null;
+          completed_at?: string | null;
+          completed_by?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          due_on?: string | null;
+          due_time?: string | null;
+          household_id: string;
+          id?: string;
+          notes?: string | null;
+          recurrence?: string;
+          recurrence_anchor_on?: string | null;
+          recurrence_interval?: number;
+          related_entity_id?: string | null;
+          related_entity_type?: string | null;
+          related_url?: string | null;
+          status?: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          assignee_member_id?: string | null;
+          completed_at?: string | null;
+          completed_by?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          due_on?: string | null;
+          due_time?: string | null;
+          household_id?: string;
+          id?: string;
+          notes?: string | null;
+          recurrence?: string;
+          recurrence_anchor_on?: string | null;
+          recurrence_interval?: number;
+          related_entity_id?: string | null;
+          related_entity_type?: string | null;
+          related_url?: string | null;
+          status?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tasks_household_id_assignee_member_id_fkey";
+            columns: ["household_id", "assignee_member_id"];
+            isOneToOne: false;
+            referencedRelation: "household_members";
+            referencedColumns: ["household_id", "id"];
+          },
+          {
+            foreignKeyName: "tasks_household_id_fkey";
             columns: ["household_id"];
             isOneToOne: false;
             referencedRelation: "households";
