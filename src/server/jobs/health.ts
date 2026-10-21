@@ -15,6 +15,7 @@ const LABELS: Record<string, string> = {
   "family-reminders": "Family reminders",
   "fx-ecb": "Exchange rates (ECB)",
   "travel-weekly": "Travel weekly check",
+  "utilities-due": "Utility contract check",
 };
 
 export function jobLabel(jobType: string): string {
