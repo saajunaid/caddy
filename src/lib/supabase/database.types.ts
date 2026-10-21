@@ -126,6 +126,169 @@ export type Database = {
         };
         Relationships: [];
       };
+      job_runs: {
+        Row: {
+          attempt: number;
+          created_at: string;
+          error: string | null;
+          finished_at: string | null;
+          household_id: string | null;
+          id: string;
+          idempotency_key: string;
+          job_type: string;
+          started_at: string;
+          stats: NonNullable<Json>;
+          status: string;
+          summary: string | null;
+          trigger: string;
+        };
+        Insert: {
+          attempt?: number;
+          created_at?: string;
+          error?: string | null;
+          finished_at?: string | null;
+          household_id?: string | null;
+          id?: string;
+          idempotency_key: string;
+          job_type: string;
+          started_at?: string;
+          stats?: NonNullable<Json>;
+          status?: string;
+          summary?: string | null;
+          trigger?: string;
+        };
+        Update: {
+          attempt?: number;
+          created_at?: string;
+          error?: string | null;
+          finished_at?: string | null;
+          household_id?: string | null;
+          id?: string;
+          idempotency_key?: string;
+          job_type?: string;
+          started_at?: string;
+          stats?: NonNullable<Json>;
+          status?: string;
+          summary?: string | null;
+          trigger?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "job_runs_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      job_source_checks: {
+        Row: {
+          checked_at: string;
+          error: string | null;
+          http_status: number | null;
+          id: string;
+          items_seen: number | null;
+          job_run_id: string;
+          source: string;
+          status: string;
+          url: string | null;
+        };
+        Insert: {
+          checked_at?: string;
+          error?: string | null;
+          http_status?: number | null;
+          id?: string;
+          items_seen?: number | null;
+          job_run_id: string;
+          source: string;
+          status: string;
+          url?: string | null;
+        };
+        Update: {
+          checked_at?: string;
+          error?: string | null;
+          http_status?: number | null;
+          id?: string;
+          items_seen?: number | null;
+          job_run_id?: string;
+          source?: string;
+          status?: string;
+          url?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "job_source_checks_job_run_id_fkey";
+            columns: ["job_run_id"];
+            isOneToOne: false;
+            referencedRelation: "job_runs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      notifications: {
+        Row: {
+          action_url: string | null;
+          body: string | null;
+          created_at: string;
+          dedupe_key: string;
+          household_id: string;
+          id: string;
+          job_run_id: string | null;
+          kind: string;
+          push: boolean;
+          pushed_at: string | null;
+          read_at: string | null;
+          severity: string;
+          title: string;
+        };
+        Insert: {
+          action_url?: string | null;
+          body?: string | null;
+          created_at?: string;
+          dedupe_key: string;
+          household_id: string;
+          id?: string;
+          job_run_id?: string | null;
+          kind: string;
+          push?: boolean;
+          pushed_at?: string | null;
+          read_at?: string | null;
+          severity?: string;
+          title: string;
+        };
+        Update: {
+          action_url?: string | null;
+          body?: string | null;
+          created_at?: string;
+          dedupe_key?: string;
+          household_id?: string;
+          id?: string;
+          job_run_id?: string | null;
+          kind?: string;
+          push?: boolean;
+          pushed_at?: string | null;
+          read_at?: string | null;
+          severity?: string;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notifications_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_job_run_id_fkey";
+            columns: ["job_run_id"];
+            isOneToOne: false;
+            referencedRelation: "job_runs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           created_at: string;
@@ -151,6 +314,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profiles_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      push_subscriptions: {
+        Row: {
+          auth: string;
+          created_at: string;
+          endpoint: string;
+          household_id: string;
+          id: string;
+          last_failure_at: string | null;
+          last_success_at: string | null;
+          p256dh: string;
+          user_agent: string | null;
+          user_id: string;
+        };
+        Insert: {
+          auth: string;
+          created_at?: string;
+          endpoint: string;
+          household_id: string;
+          id?: string;
+          last_failure_at?: string | null;
+          last_success_at?: string | null;
+          p256dh: string;
+          user_agent?: string | null;
+          user_id: string;
+        };
+        Update: {
+          auth?: string;
+          created_at?: string;
+          endpoint?: string;
+          household_id?: string;
+          id?: string;
+          last_failure_at?: string | null;
+          last_success_at?: string | null;
+          p256dh?: string;
+          user_agent?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_household_id_fkey";
             columns: ["household_id"];
             isOneToOne: false;
             referencedRelation: "households";

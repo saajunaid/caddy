@@ -6,7 +6,10 @@ import { Client } from "pg";
  * Vitest global setup for database tests: recreate a scratch database, apply the auth shim,
  * then every migration in order. Requires DATABASE_URL pointing at a disposable Postgres.
  */
-const TEST_DB = "caddy_test";
+// Separate names let several sessions share one Postgres container without clashing.
+const TEST_DB = process.env.TEST_DB_NAME ?? "caddy_test";
+if (!/^[a-z0-9_]+$/.test(TEST_DB))
+  throw new Error("TEST_DB_NAME must be lowercase letters, digits or _");
 
 export default async function setup() {
   const adminUrl = process.env.DATABASE_URL;

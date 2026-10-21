@@ -49,6 +49,8 @@ Caddy is an organiser and early-warning system. It never applies, books, switche
 | D22 | Dev network | Cloud environment has **full network access**; it holds only public values (Supabase URL, publishable key) | User choice. Secrets live only in Vercel and GitHub Actions. |
 | D23 | Sign-in | **6-digit email code**, invite-only. Sign-ups off globally (email provider stays on). First adult added by the "Add household member" GitHub Action; others from Settings. Custom email template shows the code. | Supabase's default template sends a link; turning off the email provider's own sign-up switch disables email login entirely (found in local testing). |
 | D24 | Email sending | **Custom SMTP** (Gmail app password, or Resend with a verified domain) | Supabase's built-in mailer only reaches Supabase team members at ~2 emails/hour; Resend's free sender only reaches your own address without a domain. |
+| D25 | Jobs and push plumbing | Scheduled jobs run as `scripts/jobs/run.ts` in GitHub Actions ("Daily jobs" workflow) and register in `src/server/jobs/registry.ts`. They call `/api/internal/push/flush`, authenticated with the Supabase secret key they already hold, to send push. Backups are encrypted with the same key. | No extra secrets to manage. The project URL is public, so workflows hard-code it instead of relying on a secret. |
+| D26 | Shared server code | Code under `src/server/{domain,jobs,notifications,household}` is "isomorphic": relative imports with `.ts` extensions, no `server-only`, no Next.js APIs, so Node can run it directly in GitHub Actions. | Lets one implementation serve both the app and scheduled jobs. |
 
 ---
 
@@ -347,7 +349,7 @@ The original 42-PR, 3–4 month plan is replaced by **~14 larger PRs**. Modules 
 |---|---|---|---|
 | A ✅ | **PR-1 Foundation** | Next.js scaffold, Tailwind + Dracula/Alucard tokens from the prototype, app shell (sidebar/bottom nav), PWA (manifest, icons, service worker, offline banner), lint/typecheck/test/CI, SessionStart hook (0.3, 0.4) | This session |
 | A ✅ | **PR-2 Data + auth** | Supabase migrations (core tables), RLS + RLS tests, email OTP login, invite second adult, audit events, generated types (0.5, 0.6) | This session |
-| A | **PR-3 Jobs + alerts + deploy** | `job_runs` ledger, job runner, GitHub Actions templates, ingest endpoint auth, in-app inbox, Web Push, Vercel prod deploy, nightly encrypted backup (0.7, 0.8, 0.9) | This session |
+| A ✅ | **PR-3 Jobs + alerts + deploy** | `job_runs` ledger, job runner, GitHub Actions templates, ingest endpoint auth, in-app inbox, Web Push, Vercel prod deploy, nightly encrypted backup (0.7, 0.8, 0.9) | This session |
 | B | **PR-4 Housing engine** | newstarterhomes.ie fixtures, parser, matching, observations/change detection, `housing-daily` workflow, sanity guard, notifications (1.1–1.4) | Parallel session 1 |
 | B | **PR-5 Housing UI** | List (cards/table), filters, detail tabs, history, application tracker, create-task-from-deadline (1.5) | Parallel session 2 |
 | B | **PR-6 Neighbourhood** | Geocoding, Overpass + official school/ECCE lists, `places`, Nearby tab with MapLibre map, curation, optional Google Places adapter (1.6, 1.7) | Parallel session 3 |
