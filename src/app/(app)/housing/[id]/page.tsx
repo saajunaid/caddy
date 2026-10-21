@@ -301,7 +301,13 @@ async function ApplicationTab({
   return (
     <div className="grid gap-[22px] min-[900px]:grid-cols-[1.35fr_1fr] [&>*]:min-w-0">
       <Card className="grid gap-3 p-4">
-        <h2 className="text-[1.05rem] font-semibold">Your application</h2>
+        <div>
+          <h2 className="text-[1.05rem] font-semibold">Your application</h2>
+          <p className="text-sm text-muted">
+            Only your household sees this. Daily checks never change this
+            section.
+          </p>
+        </div>
         <ApplicationForm listingId={listing.id} application={application} />
         {application ? (
           <p className="text-sm text-muted">
@@ -396,7 +402,11 @@ export default async function ListingPage({
           ) : null}
           <span className="text-sm text-muted">
             Last checked {formatChecked(new Date(listing.last_checked_at), now)}{" "}
-            · first seen {dayLabel(listing.first_seen_at, today).toLowerCase()}
+            · first seen{" "}
+            {dayLabel(listing.first_seen_at, today).replace(
+              /^(Today|Yesterday)$/,
+              (word) => word.toLowerCase(),
+            )}
           </span>
         </div>
         {listing.missing_note ? (
