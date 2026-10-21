@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Download, Printer, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/server/domain/money";
@@ -161,61 +162,78 @@ export function TaxYearView({
               </Link>
             </p>
           ) : (
-            <Card className="overflow-x-auto">
-              <table className="w-full min-w-[560px] border-collapse text-[0.88rem]">
-                <thead>
-                  <tr className="border-b border-line text-left text-[0.72rem] tracking-[0.06em] text-muted uppercase">
-                    <th className="px-3 py-2.5 font-semibold">Bill</th>
-                    <th className="px-3 py-2.5 font-semibold">Counts as</th>
-                    <th className="px-3 py-2.5 font-semibold">For</th>
-                    <th className="px-3 py-2.5 text-right font-semibold">
-                      Amount
-                    </th>
-                    <th className="px-3 py-2.5 text-right font-semibold">
-                      Share
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {evidenceItems.map((e) => (
-                    <tr
-                      key={e.id}
-                      className="border-b border-line last:border-0"
-                    >
-                      <td className="px-3 py-2.5">
-                        {e.documentId ? (
-                          <Link
-                            href={`/money/bills/${e.documentId}`}
-                            className={link}
-                          >
-                            {e.supplier ?? "Bill"}
-                          </Link>
-                        ) : (
-                          (e.supplier ?? "—")
-                        )}
-                        <span className="block text-xs text-muted">
-                          {periodLabel(
-                            e.periodStart,
-                            e.periodEnd,
-                            e.documentDate,
-                          ) ?? "Date unknown"}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        {categoryLabel(e.category)}
-                      </td>
-                      <td className="px-3 py-2.5">{e.memberName}</td>
-                      <td className="num px-3 py-2.5 text-right">
-                        {formatMoney(e.paidCents)}
-                      </td>
-                      <td className="num px-3 py-2.5 text-right">
-                        {e.sharePercent}%
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </Card>
+            <DataTable
+              label={`Evidence for ${year}`}
+              prefix="ev"
+              searchPlaceholder="Search supplier"
+              minWidth="560px"
+              columns={[
+                { key: "bill", label: "Bill" },
+                {
+                  key: "category",
+                  label: "Counts as",
+                  filter: true,
+                  filterAll: "All kinds",
+                },
+                {
+                  key: "member",
+                  label: "For",
+                  filter: true,
+                  filterAll: "Everyone",
+                },
+                {
+                  key: "amount",
+                  label: "Amount",
+                  align: "right",
+                  firstDir: "desc",
+                },
+                { key: "share", label: "Share", align: "right" },
+              ]}
+              rows={evidenceItems.map((e) => ({
+                key: e.id,
+                sort: {
+                  bill: e.periodStart ?? e.documentDate ?? null,
+                  category: categoryLabel(e.category),
+                  member: e.memberName,
+                  amount: e.paidCents,
+                  share: e.sharePercent,
+                },
+                filter: {
+                  category: categoryLabel(e.category),
+                  member: e.memberName,
+                },
+                search: `${e.supplier ?? ""} ${categoryLabel(e.category)} ${e.memberName}`,
+                cells: {
+                  bill: (
+                    <>
+                      {e.documentId ? (
+                        <Link
+                          href={`/money/bills/${e.documentId}`}
+                          className={link}
+                        >
+                          {e.supplier ?? "Bill"}
+                        </Link>
+                      ) : (
+                        (e.supplier ?? "—")
+                      )}
+                      <span className="block text-xs text-muted">
+                        {periodLabel(
+                          e.periodStart,
+                          e.periodEnd,
+                          e.documentDate,
+                        ) ?? "Date unknown"}
+                      </span>
+                    </>
+                  ),
+                  category: categoryLabel(e.category),
+                  member: e.memberName,
+                  amount: (
+                    <span className="num">{formatMoney(e.paidCents)}</span>
+                  ),
+                  share: <span className="num">{e.sharePercent}%</span>,
+                },
+              }))}
+            />
           )}
         </section>
       ) : null}

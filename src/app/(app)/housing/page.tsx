@@ -7,17 +7,13 @@ import { requireHousehold } from "@/server/auth";
 import { addDays, dublinDate } from "@/server/domain/dates";
 import { FilterBar } from "@/modules/housing/components/filter-bar";
 import { Freshness } from "@/modules/housing/components/freshness";
-import { ListingCard } from "@/modules/housing/components/listing-card";
 import { ListingsTable } from "@/modules/housing/components/listings-table";
 import { NewsPanel } from "@/modules/housing/components/news-panel";
 import { btn, note } from "@/modules/housing/components/styles";
 import {
-  countiesOf,
   FILTERS,
   inFilter,
-  parseDir,
   parseFilter,
-  parseSort,
   sortListings,
   type FilterId,
 } from "@/modules/housing/display";
@@ -58,32 +54,18 @@ export default async function HousingPage({
   ]);
 
   const filter = parseFilter(one(params.filter));
-  const counties = countiesOf(listings);
-  const countyParam = one(params.county) ?? "";
-  const county = counties.includes(countyParam) ? countyParam : "";
-  const sort = parseSort(one(params.sort));
-  const dir = parseDir(one(params.dir), sort);
-  const sortParams: Record<string, string> =
-    one(params.sort) || one(params.dir) ? { sort, dir } : {};
-
-  const inCounty = county
-    ? listings.filter((l) => l.county === county)
-    : listings;
   const counts = Object.fromEntries(
     FILTERS.map((f) => [
       f.id,
-      inCounty.filter((l) => inFilter(l, f.id, today)).length,
+      listings.filter((l) => inFilter(l, f.id, today)).length,
     ]),
   ) as Record<FilterId, number>;
+  // Newest first by default; the table lets you search, filter and re-sort.
   const shown = sortListings(
-    inCounty.filter((l) => inFilter(l, filter, today)),
-    sort,
-    dir,
+    listings.filter((l) => inFilter(l, filter, today)),
+    "first_seen",
+    "desc",
   );
-  const query: Record<string, string> = {
-    ...(filter === "matches" ? {} : { filter }),
-    ...(county ? { county } : {}),
-  };
 
   return (
     <>
@@ -107,40 +89,15 @@ export default async function HousingPage({
         </EmptyState>
       ) : (
         <>
-          <FilterBar
-            filter={filter}
-            counts={counts}
-            county={county}
-            counties={counties}
-            sortParams={sortParams}
-          />
+          <FilterBar filter={filter} counts={counts} />
           {shown.length === 0 ? (
             <EmptyState icon={SearchX} title="Nothing here right now">
               {filter === "matches"
                 ? "No open listing matches today. Caddy keeps checking every morning and will alert you as soon as one appears."
-                : "No listings fit this filter. Try “All” or another county."}
+                : "No listings fit this filter. Try “All”."}
             </EmptyState>
           ) : (
-            <>
-              <div className="grid gap-3 lg:hidden">
-                {shown.map((listing) => (
-                  <ListingCard
-                    key={listing.id}
-                    listing={listing}
-                    today={today}
-                  />
-                ))}
-              </div>
-              <div className="hidden lg:block">
-                <ListingsTable
-                  listings={shown}
-                  today={today}
-                  sort={sort}
-                  dir={dir}
-                  query={query}
-                />
-              </div>
-            </>
+            <ListingsTable listings={shown} today={today} />
           )}
         </>
       )}

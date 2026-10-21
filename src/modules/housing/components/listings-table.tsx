@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { ArrowDown, ArrowUp } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { DataTable, type DataRow } from "@/components/ui/data-table";
 import {
+  applicationBadge,
   dateLabel,
   dayLabel,
   euro,
@@ -9,173 +9,130 @@ import {
   isNewToday,
   place,
   rentFrom,
+  statusBadge,
   type ListingSummary,
-  type SortId,
 } from "../display";
 import { ApplicationChip, ListingStatusChip, NewChip } from "./badges";
+import { ListingCard } from "./listing-card";
 
-const th =
-  "border-b border-line px-3 py-2.5 text-left text-[0.72rem] font-semibold tracking-[0.06em] whitespace-nowrap text-muted uppercase";
-const td = "border-b border-line px-3 py-[11px] align-middle";
+const MATCH_RANK = { match: 0, possible: 1, none: 2 } as const;
 
-function SortHeader({
-  id,
-  label,
-  sort,
-  dir,
-  query,
-  align = "left",
-}: {
-  id: SortId;
-  label: string;
-  sort: SortId;
-  dir: "asc" | "desc";
-  query: Record<string, string>;
-  align?: "left" | "right";
-}) {
-  const active = sort === id;
-  const nextDir = active
-    ? dir === "asc"
-      ? "desc"
-      : "asc"
-    : id === "first_seen"
-      ? "desc"
-      : "asc";
-  const params = new URLSearchParams({ ...query, sort: id, dir: nextDir });
-  const Icon = dir === "asc" ? ArrowUp : ArrowDown;
-  return (
-    <th
-      scope="col"
-      className={align === "right" ? `${th} text-right` : th}
-      aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"}
-    >
-      <Link
-        href={`/housing?${params}`}
-        className="inline-flex items-center gap-1 hover:text-fg"
-      >
-        {label}
-        {active ? <Icon aria-hidden="true" className="size-3" /> : null}
-      </Link>
-    </th>
-  );
-}
-
-/** Desktop layout (≥1024px): a dense, sortable table. Sorting is done on the server via ?sort=. */
+/**
+ * Listings with search, county/status/application filters and sortable columns. Phones get the
+ * cards, desktops the table; both follow the same search, filters and order.
+ */
 export function ListingsTable({
   listings,
   today,
-  sort,
-  dir,
-  query,
 }: {
   listings: ListingSummary[];
   today: string;
-  sort: SortId;
-  dir: "asc" | "desc";
-  query: Record<string, string>;
 }) {
+  const rows: DataRow[] = listings.map((listing) => {
+    const rent = rentFrom(listing);
+    const status = statusBadge(listing, today);
+    const application = applicationBadge(listing.application_status);
+    const county = listing.county ? `Co. ${listing.county}` : null;
+    return {
+      key: listing.id,
+      sort: {
+        title: listing.title,
+        area: place(listing),
+        homes: MATCH_RANK[listing.matches],
+        rent,
+        status: status.label,
+        closes: listing.closing_date,
+        first_seen: listing.first_seen_at,
+        application: application.label,
+      },
+      filter: {
+        area: county,
+        status: status.label.split(" · ")[0],
+        application: application.label,
+      },
+      search: [
+        listing.title,
+        listing.provider,
+        place(listing),
+        listing.locality,
+        county,
+        homesSummary(listing),
+        listing.bedrooms_text,
+      ]
+        .filter(Boolean)
+        .join(" "),
+      card: <ListingCard listing={listing} today={today} />,
+      rowClassName: "relative",
+      cells: {
+        title: (
+          <>
+            <Link
+              href={`/housing/${listing.id}`}
+              className="font-semibold after:absolute after:inset-0 after:content-['']"
+            >
+              {listing.title}
+            </Link>
+            {isNewToday(listing, today) ? (
+              <span className="ml-1.5">
+                <NewChip />
+              </span>
+            ) : null}
+            {listing.provider ? (
+              <div className="text-sm text-muted">{listing.provider}</div>
+            ) : null}
+          </>
+        ),
+        area: place(listing),
+        homes: homesSummary(listing),
+        rent:
+          rent !== null ? (
+            <span className="num font-semibold">{euro(rent)}</span>
+          ) : (
+            <span className="text-muted">—</span>
+          ),
+        status: <ListingStatusChip listing={listing} today={today} />,
+        closes: listing.closing_date ? (
+          <span className="num whitespace-nowrap">
+            {dateLabel(listing.closing_date, today)}
+          </span>
+        ) : (
+          <span className="text-muted">Not stated</span>
+        ),
+        first_seen: (
+          <span className="num whitespace-nowrap">
+            {dayLabel(listing.first_seen_at, today)}
+          </span>
+        ),
+        application: <ApplicationChip status={listing.application_status} />,
+      },
+    };
+  });
+
   return (
-    <Card className="overflow-x-auto">
-      <table className="w-full border-collapse text-[0.88rem]">
-        <thead>
-          <tr>
-            <SortHeader
-              id="title"
-              label="Development"
-              sort={sort}
-              dir={dir}
-              query={query}
-            />
-            <th scope="col" className={th}>
-              Area
-            </th>
-            <th scope="col" className={th}>
-              Matching homes
-            </th>
-            <SortHeader
-              id="rent"
-              label="Rent from"
-              sort={sort}
-              dir={dir}
-              query={query}
-              align="right"
-            />
-            <th scope="col" className={th}>
-              Status
-            </th>
-            <SortHeader
-              id="closes"
-              label="Closes"
-              sort={sort}
-              dir={dir}
-              query={query}
-            />
-            <SortHeader
-              id="first_seen"
-              label="First seen"
-              sort={sort}
-              dir={dir}
-              query={query}
-            />
-            <th scope="col" className={th}>
-              Your application
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {listings.map((listing) => {
-            const rent = rentFrom(listing);
-            return (
-              <tr
-                key={listing.id}
-                className="relative hover:bg-fg/4 [&:last-child>td]:border-b-0"
-              >
-                <td className={td}>
-                  <Link
-                    href={`/housing/${listing.id}`}
-                    className="font-semibold after:absolute after:inset-0 after:content-['']"
-                  >
-                    {listing.title}
-                  </Link>
-                  {isNewToday(listing, today) ? (
-                    <span className="ml-1.5">
-                      <NewChip />
-                    </span>
-                  ) : null}
-                  {listing.provider ? (
-                    <div className="text-sm text-muted">{listing.provider}</div>
-                  ) : null}
-                </td>
-                <td className={td}>{place(listing)}</td>
-                <td className={td}>{homesSummary(listing)}</td>
-                <td className={`${td} num text-right font-semibold`}>
-                  {rent !== null ? (
-                    euro(rent)
-                  ) : (
-                    <span className="font-normal text-muted">—</span>
-                  )}
-                </td>
-                <td className={td}>
-                  <ListingStatusChip listing={listing} today={today} />
-                </td>
-                <td className={`${td} num whitespace-nowrap`}>
-                  {listing.closing_date ? (
-                    dateLabel(listing.closing_date, today)
-                  ) : (
-                    <span className="text-muted">Not stated</span>
-                  )}
-                </td>
-                <td className={`${td} num whitespace-nowrap`}>
-                  {dayLabel(listing.first_seen_at, today)}
-                </td>
-                <td className={td}>
-                  <ApplicationChip status={listing.application_status} />
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </Card>
+    <DataTable
+      label="Cost Rental listings"
+      searchPlaceholder="Search development, provider or area"
+      rows={rows}
+      columns={[
+        { key: "title", label: "Development" },
+        { key: "area", label: "Area", filter: true, filterAll: "All counties" },
+        { key: "homes", label: "Homes" },
+        { key: "rent", label: "Rent from", align: "right" },
+        {
+          key: "status",
+          label: "Status",
+          filter: true,
+          filterAll: "Any status",
+        },
+        { key: "closes", label: "Closes" },
+        { key: "first_seen", label: "First seen", firstDir: "desc" },
+        {
+          key: "application",
+          label: "Application",
+          filter: true,
+          filterAll: "Any application",
+        },
+      ]}
+    />
   );
 }

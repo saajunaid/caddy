@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft, Wallet } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Chip } from "@/components/ui/status";
 import { cn } from "@/lib/utils";
@@ -97,92 +98,106 @@ export default async function ExpensesPage({
             <h3 id="expense-list" className={sectionTitle}>
               {category ? categoryLabel(category) : "All spending"}
             </h3>
-            {/* Phone: list. Desktop: table. */}
-            <Card className="divide-y divide-line overflow-hidden lg:hidden">
-              {expenses.map((e) => (
-                <div key={e.id} className="flex items-center gap-3 px-4 py-3">
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-semibold">
-                      {e.merchant}
+            <DataTable
+              label="Household spending"
+              searchPlaceholder="Search merchant or category"
+              minWidth="640px"
+              defaultSort={{ column: "date", dir: "desc" }}
+              columns={[
+                { key: "date", label: "Date", firstDir: "desc" },
+                { key: "merchant", label: "Merchant" },
+                {
+                  key: "category",
+                  label: "Category",
+                  filter: true,
+                  filterAll: "All categories",
+                },
+                {
+                  key: "amount",
+                  label: "Amount",
+                  align: "right",
+                  firstDir: "desc",
+                },
+                {
+                  key: "paid",
+                  label: "Paid",
+                  filter: true,
+                  filterAll: "Paid or not",
+                },
+                { key: "bill", label: "Bill", sortable: false },
+              ]}
+              rows={expenses.map((e) => ({
+                key: e.id,
+                sort: {
+                  date: e.expenseDate,
+                  merchant: e.merchant,
+                  category: categoryLabel(e.category),
+                  amount: e.amountCents,
+                  paid: paidLabel(e.paymentStatus),
+                },
+                filter: {
+                  category: categoryLabel(e.category),
+                  paid: paidLabel(e.paymentStatus),
+                },
+                search: `${e.merchant} ${categoryLabel(e.category)}`,
+                card: (
+                  <Card className="flex items-center gap-3 px-4 py-3">
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-semibold">
+                        {e.merchant}
+                      </span>
+                      <span className="block truncate text-sm text-muted">
+                        {formatDate(e.expenseDate)} ·{" "}
+                        {categoryLabel(e.category)}
+                      </span>
                     </span>
-                    <span className="block truncate text-sm text-muted">
-                      {formatDate(e.expenseDate)} · {categoryLabel(e.category)}
+                    <span className="num shrink-0 font-semibold">
+                      {formatMoney(e.amountCents, e.currency)}
                     </span>
-                  </span>
-                  <span className="num shrink-0 font-semibold">
-                    {formatMoney(e.amountCents, e.currency)}
-                  </span>
-                  {e.documentId ? (
+                    {e.documentId ? (
+                      <Link
+                        href={`/money/bills/${e.documentId}`}
+                        className={`${link} shrink-0 text-sm`}
+                      >
+                        Bill
+                      </Link>
+                    ) : null}
+                  </Card>
+                ),
+                cells: {
+                  date: (
+                    <span className="num whitespace-nowrap">
+                      {formatDate(e.expenseDate)}
+                    </span>
+                  ),
+                  merchant: <span className="font-semibold">{e.merchant}</span>,
+                  category: categoryLabel(e.category),
+                  amount: (
+                    <span className="num font-semibold">
+                      {formatMoney(e.amountCents, e.currency)}
+                    </span>
+                  ),
+                  paid:
+                    e.paymentStatus === "paid" ? (
+                      <Chip tone="ok">Paid</Chip>
+                    ) : e.paymentStatus === "unpaid" ? (
+                      <Chip tone="due">Not paid</Chip>
+                    ) : (
+                      <span className="text-muted">
+                        {paidLabel(e.paymentStatus)}
+                      </span>
+                    ),
+                  bill: e.documentId ? (
                     <Link
                       href={`/money/bills/${e.documentId}`}
-                      className={`${link} shrink-0 text-sm`}
+                      className={link}
                     >
                       Bill
                     </Link>
-                  ) : null}
-                </div>
-              ))}
-            </Card>
-            <Card className="hidden overflow-x-auto lg:block">
-              <table className="w-full border-collapse text-[0.88rem]">
-                <thead>
-                  <tr className="border-b border-line text-left text-[0.72rem] tracking-[0.06em] text-muted uppercase">
-                    <th className="px-3 py-2.5 font-semibold">Date</th>
-                    <th className="px-3 py-2.5 font-semibold">Merchant</th>
-                    <th className="px-3 py-2.5 font-semibold">Category</th>
-                    <th className="px-3 py-2.5 text-right font-semibold">
-                      Amount
-                    </th>
-                    <th className="px-3 py-2.5 font-semibold">Paid</th>
-                    <th className="px-3 py-2.5 font-semibold">
-                      <span className="sr-only">Bill</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {expenses.map((e) => (
-                    <tr
-                      key={e.id}
-                      className="border-b border-line last:border-0"
-                    >
-                      <td className="num px-3 py-2.5 whitespace-nowrap">
-                        {formatDate(e.expenseDate)}
-                      </td>
-                      <td className="px-3 py-2.5 font-semibold">
-                        {e.merchant}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        {categoryLabel(e.category)}
-                      </td>
-                      <td className="num px-3 py-2.5 text-right font-semibold">
-                        {formatMoney(e.amountCents, e.currency)}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        {e.paymentStatus === "paid" ? (
-                          <Chip tone="ok">Paid</Chip>
-                        ) : e.paymentStatus === "unpaid" ? (
-                          <Chip tone="due">Not paid</Chip>
-                        ) : (
-                          <span className="text-muted">
-                            {paidLabel(e.paymentStatus)}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        {e.documentId ? (
-                          <Link
-                            href={`/money/bills/${e.documentId}`}
-                            className={link}
-                          >
-                            Bill
-                          </Link>
-                        ) : null}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </Card>
+                  ) : null,
+                },
+              }))}
+            />
           </section>
 
           <section

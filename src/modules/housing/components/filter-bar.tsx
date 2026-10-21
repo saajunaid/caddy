@@ -1,21 +1,15 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { FILTERS, type FilterId } from "../display";
-import { CountySelect } from "./county-select";
 
-/** Filter chips (search params, so links are shareable and work without JS) + county. */
+/** Filter chips (search params, so links are shareable and work without JS). County, status and
+ * application filters, search and sorting live in the listings table below. */
 export function FilterBar({
   filter,
   counts,
-  county,
-  counties,
-  sortParams,
 }: {
   filter: FilterId;
   counts: Record<FilterId, number>;
-  county: string;
-  counties: string[];
-  sortParams: Record<string, string>;
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -24,11 +18,9 @@ export function FilterBar({
         className="-mb-0.5 flex min-w-0 [scrollbar-width:none] gap-2 overflow-x-auto pb-0.5"
       >
         {FILTERS.map((f) => {
-          const params = new URLSearchParams({
-            ...sortParams,
-            ...(f.id === "matches" ? {} : { filter: f.id }),
-            ...(county ? { county } : {}),
-          });
+          const params = new URLSearchParams(
+            f.id === "matches" ? {} : { filter: f.id },
+          );
           const query = params.toString();
           const active = f.id === filter;
           return (
@@ -51,11 +43,6 @@ export function FilterBar({
           );
         })}
       </nav>
-      <CountySelect
-        counties={counties}
-        value={county}
-        hidden={{ ...sortParams, ...(filter === "matches" ? {} : { filter }) }}
-      />
     </div>
   );
 }
