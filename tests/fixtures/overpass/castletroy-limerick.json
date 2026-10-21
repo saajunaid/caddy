@@ -1,0 +1,410 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-06-01T08:52:28Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+    {
+      "type": "node",
+      "id": 278083458,
+      "lat": 52.6706945,
+      "lon": -8.5575382,
+      "tags": {
+        "bench": "yes",
+        "bin": "yes",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "lit": "yes",
+        "name": "Plassey Park Road",
+        "network": "Transport for Ireland",
+        "network:website": "https://www.transportforireland.ie/",
+        "network:wikidata": "Q17100681",
+        "network:wikipedia": "en:National Transport Authority (Ireland)",
+        "operator": "Bus Éireann",
+        "operator:website": "https://www.buseireann.ie/",
+        "operator:wikidata": "Q1017233",
+        "public_transport": "platform",
+        "ref": "607651",
+        "shelter": "yes",
+        "tactile_paving": "no"
+      }
+    },
+    {
+      "type": "node",
+      "id": 415139928,
+      "lat": 52.6655266,
+      "lon": -8.613216,
+      "tags": {
+        "addr:city": "Limerick",
+        "addr:street": "Clare Street",
+        "amenity": "university",
+        "education": "university",
+        "fixme": "Extent? location?",
+        "name": "Limerick School of Art and Design (LIT)",
+        "operator": "Technological University of the Shannon: Midlands Midwest",
+        "operator:short": "TUS",
+        "operator:type": "public",
+        "operator:website": "https://tus.ie/",
+        "operator:wikidata": "Q106646552",
+        "operator:wikipedia": "en:Technological University of the Shannon: Midlands Midwest",
+        "phone": "+353 61 293870",
+        "website": "https://lit.ie/LSAD",
+        "wikidata": "Q6549261",
+        "wikipedia": "en:Limerick Institute of Technology"
+      }
+    },
+    {
+      "type": "node",
+      "id": 418802832,
+      "lat": 52.6734677,
+      "lon": -8.5478867,
+      "tags": {
+        "bus": "yes",
+        "highway": "bus_stop",
+        "note": "verified",
+        "public_transport": "platform"
+      }
+    },
+    {
+      "type": "node",
+      "id": 421725830,
+      "lat": 52.6733287,
+      "lon": -8.5477128,
+      "tags": {
+        "bus": "yes",
+        "highway": "bus_stop",
+        "note": "verified",
+        "public_transport": "platform"
+      }
+    },
+    {
+      "type": "node",
+      "id": 478718078,
+      "lat": 52.6727839,
+      "lon": -8.5551211,
+      "tags": {
+        "amenity": "childcare",
+        "check_date": "2024-04-16",
+        "name": "Unikids Creche"
+      }
+    },
+    {
+      "type": "node",
+      "id": 545823909,
+      "lat": 52.6683929,
+      "lon": -8.5242659,
+      "tags": {
+        "amenity": "school",
+        "name": "Saint Vincent's School"
+      }
+    },
+    {
+      "type": "node",
+      "id": 1447014278,
+      "lat": 52.6247168,
+      "lon": -8.6593734,
+      "tags": {
+        "amenity": "college",
+        "disused": "yes",
+        "name": "FÁS"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5940349369,
+      "lat": 52.6660838,
+      "lon": -8.6187924,
+      "tags": {
+        "amenity": "university",
+        "education": "university",
+        "name": "Merriman House",
+        "operator": "Limerick Institute of Technology",
+        "operator:type": "public"
+      }
+    },
+    {
+      "type": "node",
+      "id": 11807125541,
+      "lat": 52.6701936,
+      "lon": -8.5524792,
+      "tags": {
+        "amenity": "college",
+        "check_date": "2024-04-10",
+        "education": "college",
+        "name": "ICHAS College Ireland"
+      }
+    },
+    {
+      "type": "node",
+      "id": 11822073968,
+      "lat": 52.6730209,
+      "lon": -8.5555328,
+      "tags": {
+        "amenity": "college",
+        "check_date": "2024-04-16",
+        "education": "college",
+        "name": "Limerick City College",
+        "phone": "+353 61 592 195",
+        "website": "https://limerickcc.ie"
+      }
+    },
+    {
+      "type": "node",
+      "id": 12924826248,
+      "lat": 52.676706,
+      "lon": -8.6760942,
+      "tags": {
+        "amenity": "university",
+        "education": "university",
+        "name": "Technological University of the Shannon: Coonagh Campus",
+        "operator": "Technological University of the Shannon",
+        "operator:short": "TUS",
+        "operator:wikidata": "Q106646552",
+        "website": "https://tus.ie/campuses/coonagh/"
+      }
+    },
+    {
+      "type": "way",
+      "id": 36382684,
+      "center": {
+        "lat": 52.6730814,
+        "lon": -8.5707382
+      },
+      "tags": {
+        "amenity": "university",
+        "contact:mastodon": "https://mastodon.ie/@UL",
+        "education": "university",
+        "name": "University of Limerick",
+        "wheelchair": "yes",
+        "wikidata": "Q573954",
+        "wikipedia": "en:University of Limerick"
+      }
+    },
+    {
+      "type": "way",
+      "id": 36396791,
+      "center": {
+        "lat": 52.6799017,
+        "lon": -8.5723055
+      },
+      "tags": {
+        "amenity": "university",
+        "education": "university",
+        "name": "University of Limerick",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 42505396,
+      "center": {
+        "lat": 52.6761111,
+        "lon": -8.6475624
+      },
+      "tags": {
+        "addr:city": "Limerick",
+        "addr:postcode": "V94 EC5T",
+        "addr:street": "Moylish Park",
+        "amenity": "university",
+        "education": "university",
+        "email": "Information@lit.ie",
+        "internet_access": "yes",
+        "name": "Technological University of the Shannon: Midlands Midwest",
+        "name:ga": "Ollscoil Teicneolaíochta na Sionainne: Lár Tíre Iarthar Láir",
+        "operator": "Technological University of the Shannon: Midlands Midwest",
+        "operator:short": "TUS",
+        "operator:type": "public",
+        "operator:website": "https://tus.ie/",
+        "operator:wikidata": "Q106646552",
+        "operator:wikipedia": "en:Technological University of the Shannon: Midlands Midwest",
+        "phone": "+353 61 293 000",
+        "website": "https://lit.ie/",
+        "wheelchair": "yes",
+        "wikidata": "Q106646552",
+        "wikipedia": "en:Technological University of the Shannon: Midlands Midwest"
+      }
+    },
+    {
+      "type": "way",
+      "id": 43366453,
+      "center": {
+        "lat": 52.6676213,
+        "lon": -8.5233108
+      },
+      "tags": {
+        "amenity": "school",
+        "name": "Saint Vincent's Centre"
+      }
+    },
+    {
+      "type": "way",
+      "id": 260830022,
+      "center": {
+        "lat": 52.6642458,
+        "lon": -8.54303
+      },
+      "tags": {
+        "amenity": "school",
+        "name": "Castletroy College"
+      }
+    },
+    {
+      "type": "way",
+      "id": 262714547,
+      "center": {
+        "lat": 52.6803034,
+        "lon": -8.5130511
+      },
+      "tags": {
+        "amenity": "school",
+        "education": "school",
+        "name": "Lisnagry National School",
+        "school": "primary"
+      }
+    },
+    {
+      "type": "way",
+      "id": 283791404,
+      "center": {
+        "lat": 52.6556618,
+        "lon": -8.6339491
+      },
+      "tags": {
+        "addr:city": "Limerick",
+        "addr:postcode": "V94 W651",
+        "addr:street": "O'Connell Avenue",
+        "amenity": "college",
+        "building": "college",
+        "building:levels": "4",
+        "education": "college",
+        "name": "LCETB O'Connell Avenue Campus (The Red Tech)",
+        "operator": "Limerick and Clare Education and Training Board",
+        "operator:type": "public",
+        "phone": "+353 61 445 700",
+        "year_of_construction": "1910"
+      }
+    },
+    {
+      "type": "way",
+      "id": 360678917,
+      "center": {
+        "lat": 52.6604753,
+        "lon": -8.6236474
+      },
+      "tags": {
+        "addr:street": "Sexton Street",
+        "amenity": "college",
+        "education": "college",
+        "fixme": "Check details.",
+        "name": "Limerick Adult Education College",
+        "source": "local knowledge (name above entrance)"
+      }
+    },
+    {
+      "type": "way",
+      "id": 456108037,
+      "center": {
+        "lat": 52.6598341,
+        "lon": -8.6160109
+      },
+      "tags": {
+        "addr:city": "Limerick",
+        "addr:street": "Mulgrave Street",
+        "amenity": "college",
+        "education": "college",
+        "name": "Limerick College of Further Education - Main Campus",
+        "operator": "Limerick and Clare Education and Training Board",
+        "operator:type": "public",
+        "website": "https://www.lcfe.ie/"
+      }
+    },
+    {
+      "type": "way",
+      "id": 795577306,
+      "center": {
+        "lat": 52.6629916,
+        "lon": -8.5369976
+      },
+      "tags": {
+        "amenity": "childcare",
+        "building": "commercial",
+        "name": "Karibu"
+      }
+    },
+    {
+      "type": "way",
+      "id": 886673342,
+      "center": {
+        "lat": 52.6526023,
+        "lon": -8.6376723
+      },
+      "tags": {
+        "addr:city": "Limerick",
+        "amenity": "university",
+        "education": "university",
+        "name": "Mary Immaculate College",
+        "name:ga": "Coláiste Mhuire gan Smál",
+        "website": "https://www.mic.ul.ie/",
+        "wikidata": "Q6779823",
+        "wikipedia": "en:Mary Immaculate College"
+      }
+    },
+    {
+      "type": "way",
+      "id": 1206373579,
+      "center": {
+        "lat": 52.654076,
+        "lon": -8.5764777
+      },
+      "tags": {
+        "addr:city": "Limerick",
+        "addr:housename": "Groody Road",
+        "addr:place": "Towlerton",
+        "addr:postcode": "V9432H4",
+        "amenity": "school",
+        "name": "Limerick Educate Together Secondary School",
+        "operator": "Educate Together",
+        "operator:type": "charitable",
+        "operator:wikidata": "Q5340837",
+        "short_name": "LETSS",
+        "website": "https://www.limericketss.ie"
+      }
+    },
+    {
+      "type": "relation",
+      "id": 3494795,
+      "center": {
+        "lat": 52.6724972,
+        "lon": -8.5669251
+      },
+      "tags": {
+        "amenity": "school",
+        "building": "school",
+        "education": "school",
+        "name": "Milford National School",
+        "school": "primary",
+        "type": "multipolygon"
+      }
+    },
+    {
+      "type": "relation",
+      "id": 6249837,
+      "center": {
+        "lat": 52.6538473,
+        "lon": -8.6427007
+      },
+      "tags": {
+        "amenity": "university",
+        "education": "university",
+        "name": "Mary Immaculate College",
+        "name:ga": "Coláiste Mhuire Gan Smál",
+        "type": "multipolygon",
+        "website": "https://www.mic.ul.ie/",
+        "wikidata": "Q6779823",
+        "wikipedia": "en:Mary Immaculate College"
+      }
+    }
+  ]
+}

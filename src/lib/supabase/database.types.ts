@@ -96,6 +96,54 @@ export type Database = {
           },
         ];
       };
+      household_place_marks: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          household_id: string;
+          id: string;
+          mark: string;
+          note: string | null;
+          place_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          household_id: string;
+          id?: string;
+          mark: string;
+          note?: string | null;
+          place_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          household_id?: string;
+          id?: string;
+          mark?: string;
+          note?: string | null;
+          place_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "household_place_marks_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "household_place_marks_place_id_fkey";
+            columns: ["place_id"];
+            isOneToOne: false;
+            referencedRelation: "places";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       households: {
         Row: {
           country_code: string;
@@ -285,6 +333,113 @@ export type Database = {
             columns: ["job_run_id"];
             isOneToOne: false;
             referencedRelation: "job_runs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      place_searches: {
+        Row: {
+          anchor_key: string;
+          categories_version: string;
+          created_at: string;
+          error: string | null;
+          id: string;
+          items_seen: number | null;
+          last_success_at: string | null;
+          latitude: number;
+          longitude: number;
+          searched_at: string;
+          source: string;
+          status: string;
+        };
+        Insert: {
+          anchor_key: string;
+          categories_version: string;
+          created_at?: string;
+          error?: string | null;
+          id?: string;
+          items_seen?: number | null;
+          last_success_at?: string | null;
+          latitude: number;
+          longitude: number;
+          searched_at?: string;
+          source: string;
+          status: string;
+        };
+        Update: {
+          anchor_key?: string;
+          categories_version?: string;
+          created_at?: string;
+          error?: string | null;
+          id?: string;
+          items_seen?: number | null;
+          last_success_at?: string | null;
+          latitude?: number;
+          longitude?: number;
+          searched_at?: string;
+          source?: string;
+          status?: string;
+        };
+        Relationships: [];
+      };
+      places: {
+        Row: {
+          address: string | null;
+          category: string;
+          created_at: string;
+          created_by: string | null;
+          details: NonNullable<Json>;
+          fetched_at: string;
+          household_id: string | null;
+          id: string;
+          latitude: number;
+          longitude: number;
+          name: string;
+          refresh_after: string | null;
+          source: string;
+          source_id: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          address?: string | null;
+          category: string;
+          created_at?: string;
+          created_by?: string | null;
+          details?: NonNullable<Json>;
+          fetched_at?: string;
+          household_id?: string | null;
+          id?: string;
+          latitude: number;
+          longitude: number;
+          name: string;
+          refresh_after?: string | null;
+          source: string;
+          source_id?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          address?: string | null;
+          category?: string;
+          created_at?: string;
+          created_by?: string | null;
+          details?: NonNullable<Json>;
+          fetched_at?: string;
+          household_id?: string | null;
+          id?: string;
+          latitude?: number;
+          longitude?: number;
+          name?: string;
+          refresh_after?: string | null;
+          source?: string;
+          source_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "places_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
             referencedColumns: ["id"];
           },
         ];
