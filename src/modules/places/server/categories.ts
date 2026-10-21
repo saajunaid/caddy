@@ -91,7 +91,8 @@ export const PLACE_CATEGORIES: readonly PlaceCategory[] = [
  * Bump when the category set, radii or the Overpass query change, so every location is
  * searched again with the new rules.
  */
-export const CATEGORIES_VERSION = "v1";
+// v2: Google covers all seven categories (PLAN D27), so v1 searches (halal and mosque only) are redone.
+export const CATEGORIES_VERSION = "v2";
 
 export function categoryDef(key: CategoryKey): CategoryDef {
   const def = CATEGORIES.find((c) => c.key === key);
