@@ -14,7 +14,12 @@ import {
   ListingStatusChip,
   MatchChip,
 } from "@/modules/housing/components/badges";
-import { ListingNearby } from "@/modules/housing/components/listing-nearby";
+import { Suspense } from "react";
+import {
+  NearbyPanel,
+  NearbyPanelSkeleton,
+} from "@/modules/places/components/nearby-panel";
+import { listingAnchorKey } from "@/modules/places/server/anchors";
 import { btn, link, note } from "@/modules/housing/components/styles";
 import {
   dateLabel,
@@ -33,6 +38,9 @@ import { unitMatch } from "@/modules/housing/server/matching";
 import { parseBedroomsSummary } from "@/modules/housing/server/values";
 
 export const metadata = { title: "Listing" };
+
+// The Nearby tab can run an on-demand lookup (OpenStreetMap is slow).
+export const maxDuration = 60;
 
 const TABS = [
   { id: "overview", label: "Overview" },
@@ -443,11 +451,20 @@ export default async function ListingPage({
 
       {tab === "overview" ? <Overview listing={listing} today={today} /> : null}
       {tab === "nearby" ? (
-        <ListingNearby
-          latitude={listing.latitude}
-          longitude={listing.longitude}
-          label={listing.title}
-        />
+        <Suspense fallback={<NearbyPanelSkeleton />}>
+          <NearbyPanel
+            anchor={
+              listing.latitude !== null && listing.longitude !== null
+                ? {
+                    key: listingAnchorKey(listing.id),
+                    label: listing.title,
+                    latitude: listing.latitude,
+                    longitude: listing.longitude,
+                  }
+                : null
+            }
+          />
+        </Suspense>
       ) : null}
       {tab === "history" ? <History listing={listing} today={today} /> : null}
       {tab === "application" ? (

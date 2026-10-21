@@ -8,6 +8,7 @@ import { familyReminders } from "../../modules/family/server/reminders-job.ts";
 import { fxEcbJob, travelWeeklyJob } from "../../modules/travel/server/jobs.ts";
 import { utilitiesDueJob } from "../../modules/money/utilities/server/job.ts";
 import { housingDailyJob } from "../../modules/housing/server/job.ts";
+import { placesRefreshJob } from "../../modules/places/server/job.ts";
 
 export type JobGroup = "daily" | "weekly";
 
@@ -49,4 +50,5 @@ export const JOBS: readonly JobDefinition[] = [
   travelWeeklyJob,
   utilitiesDueJob,
   housingDailyJob,
+  placesRefreshJob,
 ];
