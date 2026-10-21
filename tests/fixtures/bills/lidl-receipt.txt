@@ -1,0 +1,19 @@
+LIDL
+Lidl Ireland GmbH
+Main Street, Ballysample
+Whole Milk 1L 1.09
+Porridge Oats 1kg 1.69
+Tomatoes 6 Pack 1.29
+Chicken Breast 4.99
+Cheddar 400g 3.79
+Kitchen Roll 4pk 3.49
+Apples 1kg 2.29
+Pasta 500g 0.85
+Coffee 227g 3.99
+TOTAL 23.47
+Card 23.47
+VAT % VAT Net Gross
+A 23.0 0.65 2.84 3.49
+B 0.0 0.00 19.98 19.98
+Date: 12.10.2026 Time: 11:05
+Thank you for shopping at Lidl

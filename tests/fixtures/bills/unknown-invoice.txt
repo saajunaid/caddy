@@ -1,0 +1,11 @@
+Shannon Sparkle Window Cleaning
+Unit 4, Sample Business Park, Limerick
+INVOICE
+Invoice No: INV-2026-0142
+Invoice Date: 15/10/2026
+Customer: A Customer
+Description Amount
+Window cleaning (exterior, 3 bed semi) €65.04
+VAT @ 23% €14.96
+Amount Due: €80.00
+Due Date: 29/10/2026
