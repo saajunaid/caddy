@@ -1,0 +1,101 @@
+{
+  "version": 0.6,
+  "generator": "Hand-built synthetic fixture in Overpass JSON format (not real data)",
+  "osm3s": {
+    "timestamp_osm_base": "2026-10-01T00:00:00Z",
+    "copyright": "Synthetic test data. Names and places are invented."
+  },
+  "elements": [
+    {
+      "type": "node",
+      "id": 9000000001,
+      "lat": 52.6612,
+      "lon": -8.6301,
+      "tags": {
+        "amenity": "place_of_worship",
+        "religion": "muslim",
+        "denomination": "sunni",
+        "name": "Example Islamic Centre"
+      }
+    },
+    {
+      "type": "way",
+      "id": 9000000002,
+      "center": { "lat": 52.6655, "lon": -8.6198 },
+      "tags": {
+        "amenity": "place_of_worship",
+        "building": "mosque",
+        "religion": "muslim",
+        "name": "Example Mosque"
+      }
+    },
+    {
+      "type": "node",
+      "id": 9000000003,
+      "lat": 52.6621,
+      "lon": -8.6272,
+      "tags": {
+        "amenity": "restaurant",
+        "cuisine": "turkish;kebab",
+        "diet:halal": "yes",
+        "name": "Example Kebab House",
+        "opening_hours": "Mo-Su 12:00-23:00",
+        "addr:street": "Example Street",
+        "addr:city": "Limerick"
+      }
+    },
+    {
+      "type": "node",
+      "id": 9000000004,
+      "lat": 52.6633,
+      "lon": -8.6255,
+      "tags": {
+        "amenity": "fast_food",
+        "cuisine": "halal;burger",
+        "name": "Example Burger Bar"
+      }
+    },
+    {
+      "type": "node",
+      "id": 9000000005,
+      "lat": 52.6599,
+      "lon": -8.6321,
+      "tags": {
+        "shop": "butcher",
+        "name": "Example Halal Butchers"
+      }
+    },
+    {
+      "type": "node",
+      "id": 9000000006,
+      "lat": 52.664,
+      "lon": -8.624,
+      "tags": {
+        "amenity": "restaurant",
+        "cuisine": "pizza",
+        "diet:halal": "no",
+        "name": "Example Pizza"
+      }
+    },
+    {
+      "type": "node",
+      "id": 9000000007,
+      "lat": 52.6605,
+      "lon": -8.629,
+      "tags": {
+        "amenity": "place_of_worship",
+        "religion": "christian",
+        "name": "Example Church"
+      }
+    },
+    {
+      "type": "relation",
+      "id": 9000000008,
+      "tags": {
+        "amenity": "restaurant",
+        "diet:halal": "only",
+        "name": "Example Relation Without Centre"
+      }
+    }
+  ]
+}

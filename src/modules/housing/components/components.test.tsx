@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import type { ListingSummary } from "../display";
 import { Freshness } from "./freshness";
 import { ListingCard } from "./listing-card";
-import { ListingNearby } from "./listing-nearby";
 import { NewsPanel } from "./news-panel";
 
 const NOW = new Date("2026-10-21T06:20:00Z");
@@ -161,18 +160,5 @@ describe("NewsPanel", () => {
     expect(
       screen.getByText(/no research run has arrived yet/),
     ).toBeInTheDocument();
-  });
-});
-
-describe("ListingNearby placeholder", () => {
-  it("says what will appear, or that the location isn't known", () => {
-    const { rerender } = render(
-      <ListingNearby latitude={52.6} longitude={-8.5} label="X" />,
-    );
-    expect(
-      screen.getByText("Nearby places will appear here"),
-    ).toBeInTheDocument();
-    rerender(<ListingNearby latitude={null} longitude={null} label="X" />);
-    expect(screen.getByText("Location not found yet")).toBeInTheDocument();
   });
 });
