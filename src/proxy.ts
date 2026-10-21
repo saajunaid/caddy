@@ -78,7 +78,8 @@ function redirectWithCookies(url: URL, from: NextResponse): NextResponse {
 
 export const config = {
   matcher: [
-    // Everything except build assets, icons, the service worker, manifest and favicon.
-    "/((?!_next/static|_next/image|icons/|sw\\.js|manifest\\.webmanifest|favicon\\.ico).*)",
+    // Everything except API routes (they check auth themselves), build assets, icons,
+    // the service worker, manifest and favicon.
+    "/((?!api/|_next/static|_next/image|icons/|sw\\.js|manifest\\.webmanifest|favicon\\.ico).*)",
   ],
 };

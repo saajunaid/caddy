@@ -5,12 +5,19 @@ import { Sidebar } from "./sidebar";
 import { TopBar } from "./top-bar";
 
 /** Phone: sticky top bar + bottom tabs. Desktop (lg and up): left sidebar + content column. */
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({
+  children,
+  badges = {},
+}: {
+  children: ReactNode;
+  /** Counts shown next to nav items, keyed by nav item id (e.g. { inbox: 3 }). */
+  badges?: Record<string, number>;
+}) {
   return (
     <div className="grid min-h-dvh grid-cols-1 lg:grid-cols-[236px_minmax(0,1fr)]">
-      <Sidebar />
+      <Sidebar badges={badges} />
       <div className="min-w-0">
-        <TopBar />
+        <TopBar unread={badges.inbox ?? 0} />
         <OfflineBanner />
         <main
           id="main"

@@ -6,7 +6,15 @@ import { activeNavItem, NAV_ITEMS, type NavItem } from "@/modules/nav";
 import { cn } from "@/lib/utils";
 import { Brand } from "./brand";
 
-function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
+function SidebarLink({
+  item,
+  active,
+  count,
+}: {
+  item: NavItem;
+  active: boolean;
+  count?: number;
+}) {
   const Icon = item.icon;
   return (
     <Link
@@ -22,11 +30,16 @@ function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
         className={cn("size-[18px] text-muted", active && "text-accent")}
       />
       {item.label}
+      {count ? (
+        <span className="num ml-auto rounded-full bg-mine px-1.5 text-[0.7rem] font-semibold text-on-accent">
+          {count > 99 ? "99+" : count}
+        </span>
+      ) : null}
     </Link>
   );
 }
 
-export function Sidebar() {
+export function Sidebar({ badges = {} }: { badges?: Record<string, number> }) {
   const pathname = usePathname();
   const active = activeNavItem(pathname);
   const main = NAV_ITEMS.filter((item) => item.group === "main");
@@ -46,6 +59,7 @@ export function Sidebar() {
             key={item.id}
             item={item}
             active={active?.id === item.id}
+            count={badges[item.id]}
           />
         ))}
         <div className="label mx-2 mt-3.5 mb-1">You</div>
@@ -54,6 +68,7 @@ export function Sidebar() {
             key={item.id}
             item={item}
             active={active?.id === item.id}
+            count={badges[item.id]}
           />
         ))}
       </nav>

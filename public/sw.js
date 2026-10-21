@@ -4,7 +4,7 @@
  * Never caches pages, API responses or anything with household data.
  * Bump VERSION when this file's caching rules change.
  */
-const VERSION = "caddy-shell-v1";
+const VERSION = "caddy-shell-v2";
 const PRECACHE = ["/offline", "/icons/icon-192.png", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
@@ -60,4 +60,40 @@ self.addEventListener("fetch", (event) => {
     );
   }
   // Everything else (data, API routes) goes straight to the network and is never stored.
+});
+
+// Web push: show the notification, and open (or focus) Caddy at the right page when tapped.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { title: "Caddy", body: event.data ? event.data.text() : "" };
+  }
+  const title = data.title || "Caddy";
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || "",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      tag: data.tag || undefined,
+      data: { url: typeof data.url === "string" && data.url.startsWith("/") ? data.url : "/inbox" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = new URL(event.notification.data?.url || "/inbox", self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
+      for (const client of windows) {
+        if (client.url.startsWith(self.location.origin) && "focus" in client) {
+          client.navigate(url);
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(url);
+    }),
+  );
 });

@@ -1,0 +1,75 @@
+name: Nightly backup
+
+# Dumps the household data (public schema) plus account ids/emails, proves the dump restores
+# into a clean Postgres, then encrypts it with the Supabase secret key as the passphrase and keeps
+# it as a private workflow artifact for 90 days.
+#
+# To decrypt and unpack a downloaded backup:
+#   openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in caddy-backup.tgz.enc -out caddy-backup.tgz -pass pass:<Supabase secret key>
+#   tar xzf caddy-backup.tgz      # → caddy.dump (pg_restore format) + auth_users.csv
+on:
+  schedule:
+    - cron: "15 2 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      restore:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PG: docker run --rm --network host -e PGPASSWORD=postgres -v ${{ github.workspace }}:/w -w /w postgres:17
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dump the database
+        env:
+          DB_URL: ${{ secrets.SUPABASE_PROD_DB_URL }}
+        run: |
+          $PG pg_dump "$DB_URL" --schema=public --format=custom --no-owner --no-privileges --file=caddy.dump
+          $PG psql "$DB_URL" -At -c "\copy (select id, email from auth.users order by created_at) to stdout with csv" > auth_users.csv
+          ls -la caddy.dump
+          echo "accounts: $(wc -l < auth_users.csv)"
+      - name: Prove the backup restores
+        run: |
+          $PG psql -h localhost -U postgres -c "create database restore_test"
+          $PG psql -h localhost -U postgres -d restore_test -q -f supabase/tests/auth-shim.sql
+          $PG psql -h localhost -U postgres -d restore_test -c "\copy auth.users (id, email) from 'auth_users.csv' with csv"
+          # The target already has a public schema; skip that one entry.
+          $PG sh -c "pg_restore -l caddy.dump | grep -v ' SCHEMA - public ' > restore.list"
+          docker run --rm --network host -e PGPASSWORD=postgres -e PGOPTIONS="-c session_replication_role=replica" \
+            -v ${{ github.workspace }}:/w -w /w postgres:17 \
+            pg_restore -h localhost -U postgres -d restore_test --no-owner --no-privileges --exit-on-error -L restore.list caddy.dump
+          tables=$($PG psql -h localhost -U postgres -d restore_test -At -c "select count(*) from information_schema.tables where table_schema = 'public'")
+          policies=$($PG psql -h localhost -U postgres -d restore_test -At -c "select count(*) from pg_policies where schemaname = 'public'")
+          echo "Restored $tables tables and $policies security policies"
+          test "$tables" -ge 8
+          test "$policies" -ge 10
+      - name: Encrypt
+        env:
+          PASSPHRASE: ${{ secrets.SUPABASE_PROD_SECRET_KEY }}
+        run: |
+          tar czf caddy-backup.tgz caddy.dump auth_users.csv
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -in caddy-backup.tgz -out caddy-backup.tgz.enc -pass env:PASSPHRASE
+          rm caddy.dump auth_users.csv caddy-backup.tgz restore.list
+      - uses: actions/upload-artifact@v4
+        with:
+          name: caddy-backup-${{ github.run_id }}
+          path: caddy-backup.tgz.enc
+          retention-days: 90

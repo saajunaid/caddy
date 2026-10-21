@@ -26,6 +26,9 @@ Caddy is a private household PWA (Irish household, two adults). Read `docs/PLAN.
 - **Never commit real household data or real bills.** Fixtures are synthetic or redacted.
 - **Scraping etiquette:** respect robots.txt/terms, ~1 req/s, identifying User-Agent, no bypassing bot protection.
 - Domain logic in `src/server/domain` is pure (no I/O) and unit-tested.
+- Code in `src/server/{domain,jobs,notifications,household}` and module `server/` folders used by jobs must run in plain Node: relative imports with `.ts` extensions, no `server-only`, no `@/` aliases, no Next.js APIs (see PLAN D26).
+- Scheduled work = a `JobDefinition` in `src/server/jobs/registry.ts`, run via `runJob` (ledger + per-source checks). Alerts = `notify()` with a stable `dedupeKey`.
+- Database tests: `DATABASE_URL=… TEST_DB_NAME=<unique> pnpm test:db`. Every new table needs RLS and a test in `tests/db/`.
 
 ## UI
 - Follow `docs/PLAN.md` §8 and the approved prototype in `docs/design/`.

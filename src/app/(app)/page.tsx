@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { connection } from "next/server";
-import { Activity, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
+import { JobList } from "@/components/jobs/job-list";
 import { PageHeader } from "@/components/ui/page-header";
 import { Chip } from "@/components/ui/status";
 import { NAV_ITEMS } from "@/modules/nav";
 import { requireHousehold } from "@/server/auth";
+import { latestJobRuns } from "@/server/jobs/health";
 import { dublinDate, formatLongDate, greetingFor } from "@/server/domain/dates";
 
 export const metadata = { title: "Today" };
@@ -16,6 +17,7 @@ const MODULE_IDS = ["housing", "money", "family", "travel"];
 export default async function TodayPage() {
   await connection(); // Render per request so the date and greeting are always current.
   const { profile } = await requireHousehold();
+  const jobs = profile ? await latestJobRuns() : [];
   const now = new Date();
   const firstName = profile?.displayName.split(" ")[0];
   const modules = NAV_ITEMS.filter((item) => MODULE_IDS.includes(item.id));
@@ -83,11 +85,18 @@ export default async function TodayPage() {
         </Card>
       </section>
 
-      <EmptyState icon={Activity} title="Background checks">
-        No checks have run yet. Once the daily housing check and reminders are
-        switched on, each run shows here with its time and result, and a failed
-        run is never shown as &ldquo;nothing found&rdquo;.
-      </EmptyState>
+      <Card className="grid gap-2 p-4">
+        <h2 className="text-[1.05rem] font-semibold">Background checks</h2>
+        {jobs.length > 0 ? (
+          <JobList jobs={jobs} now={now} />
+        ) : (
+          <p className="text-muted">
+            No checks have run yet. Each run will show here with its time and
+            result, and a failed run is never shown as &ldquo;nothing
+            found&rdquo;.
+          </p>
+        )}
+      </Card>
     </>
   );
 }
