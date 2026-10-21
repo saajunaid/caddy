@@ -227,6 +227,294 @@ export type Database = {
         };
         Relationships: [];
       };
+      housing_applications: {
+        Row: {
+          applied_on: string | null;
+          created_at: string;
+          household_id: string;
+          id: string;
+          listing_id: string;
+          next_action: string | null;
+          next_action_due: string | null;
+          notes: string | null;
+          outcome_text: string | null;
+          provider_reference: string | null;
+          status: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          applied_on?: string | null;
+          created_at?: string;
+          household_id: string;
+          id?: string;
+          listing_id: string;
+          next_action?: string | null;
+          next_action_due?: string | null;
+          notes?: string | null;
+          outcome_text?: string | null;
+          provider_reference?: string | null;
+          status?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          applied_on?: string | null;
+          created_at?: string;
+          household_id?: string;
+          id?: string;
+          listing_id?: string;
+          next_action?: string | null;
+          next_action_due?: string | null;
+          notes?: string | null;
+          outcome_text?: string | null;
+          provider_reference?: string | null;
+          status?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "housing_applications_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "housing_applications_listing_id_fkey";
+            columns: ["listing_id"];
+            isOneToOne: false;
+            referencedRelation: "housing_listings";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      housing_listings: {
+        Row: {
+          address_text: string | null;
+          apply_url: string | null;
+          bedrooms_text: string | null;
+          closed_at: string | null;
+          closing_date: string | null;
+          closing_text: string | null;
+          content_hash: string;
+          county: string | null;
+          created_at: string;
+          external_id: string;
+          first_seen_at: string;
+          geocode_query: string | null;
+          geocode_source: string | null;
+          geocoded_at: string | null;
+          id: string;
+          last_checked_at: string;
+          last_seen_at: string;
+          latitude: number | null;
+          listed_on: string | null;
+          locality: string | null;
+          longitude: number | null;
+          matches: string;
+          min_matching_rent_cents: number | null;
+          missed_runs: number;
+          missing_note: string | null;
+          provider: string | null;
+          raw: NonNullable<Json>;
+          rent_from_cents: number | null;
+          source: string;
+          status: string;
+          status_text: string | null;
+          title: string;
+          total_homes: number | null;
+          unit_types: NonNullable<Json>;
+          updated_at: string;
+          url: string;
+        };
+        Insert: {
+          address_text?: string | null;
+          apply_url?: string | null;
+          bedrooms_text?: string | null;
+          closed_at?: string | null;
+          closing_date?: string | null;
+          closing_text?: string | null;
+          content_hash: string;
+          county?: string | null;
+          created_at?: string;
+          external_id: string;
+          first_seen_at?: string;
+          geocode_query?: string | null;
+          geocode_source?: string | null;
+          geocoded_at?: string | null;
+          id?: string;
+          last_checked_at?: string;
+          last_seen_at?: string;
+          latitude?: number | null;
+          listed_on?: string | null;
+          locality?: string | null;
+          longitude?: number | null;
+          matches?: string;
+          min_matching_rent_cents?: number | null;
+          missed_runs?: number;
+          missing_note?: string | null;
+          provider?: string | null;
+          raw?: NonNullable<Json>;
+          rent_from_cents?: number | null;
+          source?: string;
+          status?: string;
+          status_text?: string | null;
+          title: string;
+          total_homes?: number | null;
+          unit_types?: NonNullable<Json>;
+          updated_at?: string;
+          url: string;
+        };
+        Update: {
+          address_text?: string | null;
+          apply_url?: string | null;
+          bedrooms_text?: string | null;
+          closed_at?: string | null;
+          closing_date?: string | null;
+          closing_text?: string | null;
+          content_hash?: string;
+          county?: string | null;
+          created_at?: string;
+          external_id?: string;
+          first_seen_at?: string;
+          geocode_query?: string | null;
+          geocode_source?: string | null;
+          geocoded_at?: string | null;
+          id?: string;
+          last_checked_at?: string;
+          last_seen_at?: string;
+          latitude?: number | null;
+          listed_on?: string | null;
+          locality?: string | null;
+          longitude?: number | null;
+          matches?: string;
+          min_matching_rent_cents?: number | null;
+          missed_runs?: number;
+          missing_note?: string | null;
+          provider?: string | null;
+          raw?: NonNullable<Json>;
+          rent_from_cents?: number | null;
+          source?: string;
+          status?: string;
+          status_text?: string | null;
+          title?: string;
+          total_homes?: number | null;
+          unit_types?: NonNullable<Json>;
+          updated_at?: string;
+          url?: string;
+        };
+        Relationships: [];
+      };
+      housing_observations: {
+        Row: {
+          change_summary: string[];
+          content_hash: string;
+          id: string;
+          job_run_id: string | null;
+          listing_id: string;
+          observed_at: string;
+          snapshot: NonNullable<Json>;
+        };
+        Insert: {
+          change_summary?: string[];
+          content_hash: string;
+          id?: string;
+          job_run_id?: string | null;
+          listing_id: string;
+          observed_at?: string;
+          snapshot: NonNullable<Json>;
+        };
+        Update: {
+          change_summary?: string[];
+          content_hash?: string;
+          id?: string;
+          job_run_id?: string | null;
+          listing_id?: string;
+          observed_at?: string;
+          snapshot?: NonNullable<Json>;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "housing_observations_job_run_id_fkey";
+            columns: ["job_run_id"];
+            isOneToOne: false;
+            referencedRelation: "job_runs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "housing_observations_listing_id_fkey";
+            columns: ["listing_id"];
+            isOneToOne: false;
+            referencedRelation: "housing_listings";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      housing_projects: {
+        Row: {
+          bedroom_mix: string | null;
+          cost_rental_confirmed: string;
+          cost_rental_homes: number | null;
+          county: string | null;
+          created_at: string;
+          expected_date_text: string | null;
+          id: string;
+          last_checked_on: string | null;
+          locality: string | null;
+          name: string;
+          notes: string | null;
+          provider: string | null;
+          source_url: string | null;
+          stage: string | null;
+          total_homes: number | null;
+          updated_at: string;
+          updated_by: string | null;
+          verification: string;
+        };
+        Insert: {
+          bedroom_mix?: string | null;
+          cost_rental_confirmed?: string;
+          cost_rental_homes?: number | null;
+          county?: string | null;
+          created_at?: string;
+          expected_date_text?: string | null;
+          id?: string;
+          last_checked_on?: string | null;
+          locality?: string | null;
+          name: string;
+          notes?: string | null;
+          provider?: string | null;
+          source_url?: string | null;
+          stage?: string | null;
+          total_homes?: number | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          verification?: string;
+        };
+        Update: {
+          bedroom_mix?: string | null;
+          cost_rental_confirmed?: string;
+          cost_rental_homes?: number | null;
+          county?: string | null;
+          created_at?: string;
+          expected_date_text?: string | null;
+          id?: string;
+          last_checked_on?: string | null;
+          locality?: string | null;
+          name?: string;
+          notes?: string | null;
+          provider?: string | null;
+          source_url?: string | null;
+          stage?: string | null;
+          total_homes?: number | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          verification?: string;
+        };
+        Relationships: [];
+      };
       ical_tokens: {
         Row: {
           created_at: string;
@@ -601,6 +889,66 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      research_items: {
+        Row: {
+          agent: string;
+          content_hash: string;
+          cost_rental_confirmed: string;
+          created_at: string;
+          id: string;
+          locality: string | null;
+          provider: string | null;
+          published_on: string | null;
+          retrieved_at: string;
+          source_name: string;
+          source_type: string;
+          summary: string | null;
+          title: string;
+          topic: string;
+          updated_at: string;
+          url: string;
+          verification: string;
+        };
+        Insert: {
+          agent: string;
+          content_hash: string;
+          cost_rental_confirmed?: string;
+          created_at?: string;
+          id?: string;
+          locality?: string | null;
+          provider?: string | null;
+          published_on?: string | null;
+          retrieved_at?: string;
+          source_name: string;
+          source_type?: string;
+          summary?: string | null;
+          title: string;
+          topic?: string;
+          updated_at?: string;
+          url: string;
+          verification?: string;
+        };
+        Update: {
+          agent?: string;
+          content_hash?: string;
+          cost_rental_confirmed?: string;
+          created_at?: string;
+          id?: string;
+          locality?: string | null;
+          provider?: string | null;
+          published_on?: string | null;
+          retrieved_at?: string;
+          source_name?: string;
+          source_type?: string;
+          summary?: string | null;
+          title?: string;
+          topic?: string;
+          updated_at?: string;
+          url?: string;
+          verification?: string;
+        };
+        Relationships: [];
       };
       school_applications: {
         Row: {
