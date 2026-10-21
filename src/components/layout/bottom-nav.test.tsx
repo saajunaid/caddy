@@ -55,4 +55,17 @@ describe("BottomNav", () => {
       "page",
     );
   });
+
+  it("shows the unread inbox count on More, since phones have no top bar", () => {
+    render(<BottomNav unread={12} />);
+    const more = screen.getByRole("link", { name: "More, 12 unread in Inbox" });
+    expect(more).toHaveTextContent("9+");
+  });
+
+  it("shows no badge when the inbox is read", () => {
+    render(<BottomNav unread={0} />);
+    expect(screen.getByRole("link", { name: "More" })).not.toHaveTextContent(
+      /\d/,
+    );
+  });
 });
