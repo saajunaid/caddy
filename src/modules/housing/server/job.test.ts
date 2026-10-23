@@ -345,6 +345,67 @@ describe("housing-daily", () => {
     expect(store.byExternalId("allmans-view").missed_runs).toBe(0);
   });
 
+  it("treats an empty page after a full last page as the end of the list", async () => {
+    // newstarterhomes.ie links to an empty extra page when the total fills its last page exactly
+    // (204 listings = 17 × 12). That's the end of the list, not a layout change.
+    const lastPage = fixture("mini-index-page-2.html").replace(
+      'id="paging">',
+      'id="paging"><p class="mz" id="next"><a class="button tac" href="?page=3">Next</a></p>',
+    );
+    expect(lastPage).toContain("?page=3");
+    const store = new MemoryHousingStore();
+    const run = context(DAY1);
+    const result = await runHousingDaily(run.ctx, {
+      store,
+      fetcher: site({
+        [`${INDEX_URL}?page=2`]: { status: 200, text: lastPage },
+        [`${INDEX_URL}?page=3`]: "index-page-18-empty.html",
+      }),
+      geocodeFetcher: noGeocode,
+    });
+    expect(result.discoveryComplete).toBe(true);
+    expect(run.summary).not.toContain("list incomplete");
+    expect(run.sources.filter((s) => s.status === "failed")).toEqual([]);
+    expect(run.sources).toContainEqual(
+      expect.objectContaining({
+        url: `${INDEX_URL}?page=3`,
+        status: "ok",
+        itemsSeen: 0,
+      }),
+    );
+    expect(store.listings.size).toBe(10);
+  });
+
+  it("still fails an empty page when listings are missing from the count", async () => {
+    const shortFirst = fixture("mini-index-page-1.html").replace(
+      "of 10 properties",
+      "of 40 properties",
+    );
+    const lastPage = fixture("mini-index-page-2.html")
+      .replace("of 10 properties", "of 40 properties")
+      .replace(
+        'id="paging">',
+        'id="paging"><p class="mz" id="next"><a class="button tac" href="?page=3">Next</a></p>',
+      );
+    const run = context(DAY1);
+    const result = await runHousingDaily(run.ctx, {
+      store: new MemoryHousingStore(),
+      fetcher: site({
+        [INDEX_URL]: { status: 200, text: shortFirst },
+        [`${INDEX_URL}?page=2`]: { status: 200, text: lastPage },
+        [`${INDEX_URL}?page=3`]: "index-page-18-empty.html",
+      }),
+      geocodeFetcher: noGeocode,
+    });
+    expect(result.discoveryComplete).toBe(false);
+    expect(run.sources).toContainEqual(
+      expect.objectContaining({
+        url: `${INDEX_URL}?page=3`,
+        status: "failed",
+      }),
+    );
+  });
+
   it("fails loudly when the list page loads but no listings can be read", async () => {
     const store = new MemoryHousingStore();
     const run = context(DAY1);

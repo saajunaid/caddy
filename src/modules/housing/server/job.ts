@@ -122,6 +122,25 @@ async function discover(
       break;
     }
     const page = parseIndexPage(html, url);
+    if (
+      page.cards.length === 0 &&
+      pages > 1 &&
+      reportedTotal !== null &&
+      cards.size >= reportedTotal
+    ) {
+      // The site shows a "Next" link to an empty page when the total is an exact multiple of
+      // its page size (204 = 17 × 12). Every listing it reported is already in hand, so this is
+      // the end of the list, not a broken page.
+      await ctx.recordSource({
+        source,
+        url,
+        status: "ok",
+        httpStatus: status,
+        itemsSeen: 0,
+      });
+      url = null;
+      break;
+    }
     if (page.cards.length === 0) {
       // Sanity guard: a page that loads but yields no listings is a parser failure,
       // never "zero results".
