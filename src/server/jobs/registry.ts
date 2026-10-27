@@ -10,8 +10,11 @@ import { utilitiesDueJob } from "../../modules/money/utilities/server/job.ts";
 import { housingDailyJob } from "../../modules/housing/server/job.ts";
 import { placesRefreshJob } from "../../modules/places/server/job.ts";
 import { documentsSweepJob } from "../../modules/money/documents/jobs/sweep.ts";
+import { dailyDigestJob } from "../../modules/today/server/digest-job.ts";
 
-export type JobGroup = "daily" | "weekly";
+/** daily: early-morning checks (retried later in the day if they fail); digest: the morning
+ * summary, run after the daily checks; weekly: Mondays. */
+export type JobGroup = "daily" | "weekly" | "digest";
 
 export type JobDefinition = {
   type: string;
@@ -53,4 +56,5 @@ export const JOBS: readonly JobDefinition[] = [
   housingDailyJob,
   placesRefreshJob,
   documentsSweepJob,
+  dailyDigestJob,
 ];

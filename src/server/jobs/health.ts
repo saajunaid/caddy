@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { jobLabel } from "./labels";
 
 export type JobHealth = {
   jobType: string;
@@ -10,24 +11,7 @@ export type JobHealth = {
   finishedAt: Date | null;
 };
 
-const LABELS: Record<string, string> = {
-  heartbeat: "Scheduler",
-  "family-reminders": "Family reminders",
-  "fx-ecb": "Exchange rates (ECB)",
-  "travel-weekly": "Travel weekly check",
-  "utilities-due": "Utility contract check",
-  "housing-daily": "Cost Rental check",
-  "housing-news": "Housing news",
-  "places-refresh": "Nearby places",
-  "places-lookup": "Nearby lookup",
-};
-
-export function jobLabel(jobType: string): string {
-  return (
-    LABELS[jobType] ??
-    jobType.replace(/[-_]/g, " ").replace(/^\w/, (c) => c.toUpperCase())
-  );
-}
+export { jobLabel };
 
 /** Latest run of each job the signed-in household can see. */
 export async function latestJobRuns(): Promise<JobHealth[]> {

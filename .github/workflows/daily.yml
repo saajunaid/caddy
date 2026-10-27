@@ -1,15 +1,19 @@
 name: Daily jobs
 
-# Runs every job in the "daily" group (see src/server/jobs/registry.ts) each morning.
-# GitHub runs cron in UTC and can start late; each job's idempotency key uses the Dublin date,
-# so a late or repeated run never does the same day's work twice.
+# Runs every job in the "daily" group (see src/server/jobs/registry.ts) each morning, then twice
+# more as retries. GitHub runs cron in UTC and can start late; each job's idempotency key uses the
+# Dublin date, so a later run skips jobs that already succeeded today and only retries the ones
+# that failed or partly failed (up to 3 attempts a day).
+# The 07:25 run also sends the morning summary push ("digest" group) after the retries.
 on:
   schedule:
-    - cron: "55 5 * * *"
+    - cron: "55 5 * * *" # main run
+    - cron: "25 7 * * *" # retry + morning summary
+    - cron: "55 12 * * *" # lunchtime retry
   workflow_dispatch:
     inputs:
       job:
-        description: "Run a single job by type (leave empty for all daily jobs)"
+        description: "Run a single job by type, e.g. housing-daily or daily-digest (leave empty for all daily jobs)"
         required: false
         type: string
 
@@ -43,9 +47,15 @@ jobs:
           GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
           JOB_TRIGGER: ${{ github.event_name == 'workflow_dispatch' && 'manual' || 'schedule' }}
           ONE_JOB: ${{ inputs.job }}
+          SEND_DIGEST: ${{ github.event.schedule == '25 7 * * *' && '1' || '' }}
         run: |
           if [ -n "$ONE_JOB" ]; then
             node --experimental-strip-types scripts/jobs/run.ts job "$ONE_JOB"
           else
-            node --experimental-strip-types scripts/jobs/run.ts daily
+            status=0
+            node --experimental-strip-types scripts/jobs/run.ts daily || status=$?
+            if [ -n "$SEND_DIGEST" ]; then
+              node --experimental-strip-types scripts/jobs/run.ts digest || status=$?
+            fi
+            exit $status
           fi
