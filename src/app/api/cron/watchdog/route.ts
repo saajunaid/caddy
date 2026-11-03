@@ -8,6 +8,7 @@ import {
   flushPendingPushes,
   vapidFromEnv,
 } from "@/server/notifications/push.ts";
+import { sendPendingEmails } from "@/server/notifications/send-emails";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +65,8 @@ export async function GET(request: NextRequest) {
 
   const vapid = vapidFromEnv();
   const push = vapid ? await flushPendingPushes(admin, vapid) : null;
+  // Email matters most here: if GitHub stopped the jobs, it never calls the email flush.
+  const email = await sendPendingEmails(admin);
 
   if (who === "anonymous") return NextResponse.json({ status: result.status });
   return NextResponse.json({
@@ -71,5 +74,6 @@ export async function GET(request: NextRequest) {
     summary: result.summary,
     error: result.error,
     push,
+    email,
   });
 }

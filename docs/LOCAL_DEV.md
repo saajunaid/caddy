@@ -55,6 +55,9 @@ APP_TIMEZONE=Europe/Dublin
 
 These are local-only keys. **Never put production keys in `.env.local`.**
 
+Optional, to try email alerts locally (they land in the local mailbox at http://localhost:54324):
+`SMTP_USER=caddy@example.test`, `SMTP_PASSWORD=local`, `SMTP_HOST=127.0.0.1`, `SMTP_PORT=54325`.
+
 Optional, to try push notifications locally: run `pnpm dlx web-push generate-vapid-keys` and add
 `NEXT_PUBLIC_VAPID_PUBLIC_KEY=` and `VAPID_PRIVATE_KEY=` lines.
 

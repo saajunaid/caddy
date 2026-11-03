@@ -3,7 +3,7 @@
 //   node --experimental-strip-types scripts/jobs/run.ts digest           # the morning summary push
 //   node --experimental-strip-types scripts/jobs/run.ts watchdog         # missed-run check (Vercel runs it)
 //   node --experimental-strip-types scripts/jobs/run.ts job housing-daily  # one job
-// Env: SUPABASE_URL, SUPABASE_SECRET_KEY, optional APP_URL (to send push notifications after).
+// Env: SUPABASE_URL, SUPABASE_SECRET_KEY, optional APP_URL (to send push and email alerts after).
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../../src/lib/supabase/database.types.ts";
 import { JOBS, type JobGroup } from "../../src/server/jobs/registry.ts";
@@ -56,17 +56,22 @@ for (const job of selected) {
   }
 }
 
-// Deliver push notifications created by these jobs.
+// Deliver push notifications and email alerts created by these jobs. The app sends them, so
+// the push keys and SMTP password stay in Vercel.
 const appUrl = process.env.APP_URL?.replace(/\/$/, "");
 if (appUrl) {
-  try {
-    const response = await fetch(`${appUrl}/api/internal/push/flush`, {
-      method: "POST",
-      headers: { authorization: `Bearer ${secretKey}` },
-    });
-    console.log(`push flush: HTTP ${response.status} ${await response.text()}`);
-  } catch (error) {
-    console.error(`push flush failed: ${(error as Error).message}`);
+  for (const channel of ["push", "email"]) {
+    try {
+      const response = await fetch(`${appUrl}/api/internal/${channel}/flush`, {
+        method: "POST",
+        headers: { authorization: `Bearer ${secretKey}` },
+      });
+      console.log(
+        `${channel} flush: HTTP ${response.status} ${await response.text()}`,
+      );
+    } catch (error) {
+      console.error(`${channel} flush failed: ${(error as Error).message}`);
+    }
   }
 }
 

@@ -1074,6 +1074,7 @@ export type Database = {
           body: string | null;
           created_at: string;
           dedupe_key: string;
+          emailed_at: string | null;
           household_id: string;
           id: string;
           job_run_id: string | null;
@@ -1089,6 +1090,7 @@ export type Database = {
           body?: string | null;
           created_at?: string;
           dedupe_key: string;
+          emailed_at?: string | null;
           household_id: string;
           id?: string;
           job_run_id?: string | null;
@@ -1104,6 +1106,7 @@ export type Database = {
           body?: string | null;
           created_at?: string;
           dedupe_key?: string;
+          emailed_at?: string | null;
           household_id?: string;
           id?: string;
           job_run_id?: string | null;
@@ -1242,6 +1245,7 @@ export type Database = {
         Row: {
           created_at: string;
           display_name: string;
+          email_alerts: boolean;
           household_id: string;
           updated_at: string;
           user_id: string;
@@ -1249,6 +1253,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           display_name: string;
+          email_alerts?: boolean;
           household_id: string;
           updated_at?: string;
           user_id: string;
@@ -1256,6 +1261,7 @@ export type Database = {
         Update: {
           created_at?: string;
           display_name?: string;
+          email_alerts?: boolean;
           household_id?: string;
           updated_at?: string;
           user_id?: string;

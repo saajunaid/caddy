@@ -10,6 +10,8 @@ import { latestJobRuns } from "@/server/jobs/health";
 import { signOutAction } from "./actions";
 import { HouseholdNameForm } from "./household-name-form";
 import { InviteForm } from "./invite-form";
+import { emailConfigured } from "@/server/notifications/send-emails";
+import { EmailSettings } from "./email-settings";
 import { PushSettings } from "./push-settings";
 
 export const metadata = { title: "Settings" };
@@ -33,7 +35,7 @@ export default async function SettingsPage() {
   await connection();
   const { user, profile } = await requireHousehold();
   const supabase = await createClient();
-  const [members, jobs] = await Promise.all([
+  const [members, jobs, emailPref] = await Promise.all([
     profile
       ? supabase
           .from("household_members")
@@ -42,6 +44,11 @@ export default async function SettingsPage() {
           .order("created_at")
       : Promise.resolve(null),
     profile ? latestJobRuns() : Promise.resolve([]),
+    supabase
+      .from("profiles")
+      .select("email_alerts")
+      .eq("user_id", user.id)
+      .maybeSingle(),
   ]);
   if (members?.error)
     throw new Error(
@@ -98,6 +105,13 @@ export default async function SettingsPage() {
 
           <Section title="Notifications">
             <PushSettings />
+            {profile ? (
+              <EmailSettings
+                enabled={emailPref.data?.email_alerts ?? true}
+                configured={emailConfigured()}
+                email={user.email ?? null}
+              />
+            ) : null}
           </Section>
 
           <Section title="Appearance">

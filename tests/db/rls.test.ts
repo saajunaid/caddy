@@ -145,6 +145,33 @@ describe("profiles", () => {
     expect(partner).toBe(0);
   });
 
+  it("let each adult turn their own email alerts off, but not their partner's", async () => {
+    const result = await as(db, f.userA, async () => {
+      const own = await db.query(
+        "update public.profiles set email_alerts = false where user_id = $1",
+        [f.userA],
+      );
+      const partner = await db.query(
+        "update public.profiles set email_alerts = false where user_id = $1",
+        [f.userA2],
+      );
+      const { rows } = await db.query(
+        "select user_id, email_alerts from public.profiles",
+      );
+      return {
+        own: own.rowCount,
+        partner: partner.rowCount,
+        values: Object.fromEntries(
+          rows.map((r) => [r.user_id, r.email_alerts]),
+        ),
+      };
+    });
+    expect(result.own).toBe(1);
+    expect(result.partner).toBe(0);
+    expect(result.values[f.userA]).toBe(false);
+    expect(result.values[f.userA2]).toBe(true);
+  });
+
   it("cannot be inserted by signed-in users", async () => {
     const error = await errorAs(db, f.userNoProfile, () =>
       db.query(

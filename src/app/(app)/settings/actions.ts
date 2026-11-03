@@ -6,6 +6,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { requireHousehold } from "@/server/auth";
 import { addAdult, AddAdultError } from "@/server/household/add-adult.ts";
+import {
+  composeEmail,
+  emailFromEnv,
+  smtpSender,
+} from "@/server/notifications/email.ts";
 import { notify } from "@/server/notifications/notify.ts";
 import { pushToHousehold, vapidFromEnv } from "@/server/notifications/push.ts";
 
@@ -147,4 +152,57 @@ export async function sendTestNotificationAction(): Promise<{
     tag: "test",
   });
   return { delivered };
+}
+
+export async function setEmailAlertsAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const { user, profile } = await requireHousehold();
+  if (!profile) return { error: "Your account isn't part of a household yet." };
+  const enabled = formData.get("enabled") === "true";
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ email_alerts: enabled })
+    .eq("user_id", user.id);
+  if (error) return { error: "Couldn't save that. Try again." };
+  revalidatePath("/settings");
+  return {
+    notice: enabled
+      ? "Email alerts are on for you."
+      : "Email alerts are off for you. Push and the Inbox still work.",
+  };
+}
+
+export async function sendTestEmailAction(): Promise<FormState> {
+  const { user } = await requireHousehold();
+  const config = emailFromEnv();
+  if (!config) return { error: "Email isn't set up on the server yet." };
+  if (!user.email) return { error: "Your account has no email address." };
+  try {
+    const send = await smtpSender(config);
+    await send({
+      to: [user.email],
+      ...composeEmail(
+        [
+          {
+            title: "Test email",
+            body: "Urgent Caddy alerts will arrive like this.",
+            actionUrl: "/settings",
+            severity: "success",
+          },
+        ],
+        (
+          process.env.APP_URL?.trim() || "https://caddy-beryl.vercel.app"
+        ).replace(/\/$/, ""),
+      ),
+    });
+    return { notice: `Sent to ${user.email}. Check your inbox (and spam).` };
+  } catch {
+    return {
+      error:
+        "Couldn't send. Check SMTP_USER and SMTP_PASSWORD (a Gmail app password) in Vercel.",
+    };
+  }
 }
