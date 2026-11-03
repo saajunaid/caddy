@@ -13,6 +13,7 @@ const LABELS: Record<string, string> = {
   "documents-sweep": "Unfinished uploads",
   "bill-reader": "Bill reader",
   "daily-digest": "Daily summary",
+  watchdog: "Missed-run check",
 };
 
 export function jobLabel(jobType: string): string {

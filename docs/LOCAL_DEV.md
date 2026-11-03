@@ -113,6 +113,8 @@ The workflow is the same as in the cloud:
 
 - **Daily jobs** (housing check, utilities, family reminders, exchange rates, nearby places) and
   the **weekly** job run on GitHub Actions. They're free and don't depend on Claude.
+- A **missed-run check** runs on Vercel's scheduler at about 10:00 each day and alerts you if
+  the GitHub jobs didn't run. Locally: `node --experimental-strip-types scripts/jobs/run.ts watchdog`.
 - **Housing news** is a Claude Code routine that runs in the cloud each morning at 06:47. It uses
   your Claude plan's usage. To run it yourself instead, see `research/README.md`. Any agent, such
   as `claude -p`, Gemini CLI or a local model, can write the JSON and send it with

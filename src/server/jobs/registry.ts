@@ -11,10 +11,12 @@ import { housingDailyJob } from "../../modules/housing/server/job.ts";
 import { placesRefreshJob } from "../../modules/places/server/job.ts";
 import { documentsSweepJob } from "../../modules/money/documents/jobs/sweep.ts";
 import { dailyDigestJob } from "../../modules/today/server/digest-job.ts";
+import { makeWatchdogJob } from "./watchdog.ts";
 
 /** daily: early-morning checks (retried later in the day if they fail); digest: the morning
- * summary, run after the daily checks; weekly: Mondays. */
-export type JobGroup = "daily" | "weekly" | "digest";
+ * summary, run after the daily checks; weekly: Mondays; watchdog: run by Vercel's scheduler
+ * (not GitHub) to check that the daily and digest jobs ran. */
+export type JobGroup = "daily" | "weekly" | "digest" | "watchdog";
 
 export type JobDefinition = {
   type: string;
@@ -57,4 +59,9 @@ export const JOBS: readonly JobDefinition[] = [
   placesRefreshJob,
   documentsSweepJob,
   dailyDigestJob,
+  makeWatchdogJob(() =>
+    JOBS.filter((job) => job.group === "daily" || job.group === "digest").map(
+      (job) => job.type,
+    ),
+  ),
 ];

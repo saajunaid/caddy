@@ -52,6 +52,7 @@ Caddy is an organiser and early-warning system. It never applies, books, switche
 | D25 | Jobs and push plumbing | Scheduled jobs run as `scripts/jobs/run.ts` in GitHub Actions ("Daily jobs" workflow) and register in `src/server/jobs/registry.ts`. They call `/api/internal/push/flush`, authenticated with the Supabase secret key they already hold, to send push. Backups are encrypted with the same key. | No extra secrets to manage. The project URL is public, so workflows hard-code it instead of relying on a secret. |
 | D26 | Shared server code | Code under `src/server/{domain,jobs,notifications,household}` is "isomorphic": relative imports with `.ts` extensions, no `server-only`, no Next.js APIs, so Node can run it directly in GitHub Actions. | Lets one implementation serve both the app and scheduled jobs. |
 | D27 | Nearby places source (21 Oct 2026) | Google Places (New) Text Search is the main source for all nearby categories (7 calls per home, refreshed every 25–30 days, max 70 calls per run, Pro-tier fields only). OpenStreetMap/Overpass is off unless no Google key is set, or `PLACES_USE_OSM=1`. | Public Overpass mirrors timed out on even tiny queries from GitHub Actions and the sandbox, so the daily job would fail most days. Expected use is 100–300 calls a month against 5,000 free. Longer term, official data (Department of Education school lists, NTA GTFS bus stops) can replace Google for schools and buses. |
+| D28 | Missed-run watchdog (3 Nov 2026) | A `watchdog` job runs on **Vercel Cron** (`vercel.json`, 10:00 UTC daily, `/api/cron/watchdog`), separate from GitHub Actions. From 10:00 Dublin time it checks that every daily and digest job has a run today, and sends one critical alert if any are missing. | A job that never ran can't report itself. GitHub turns off schedules in public repos after 60 days without commits, and outages or expired keys stop runs silently. Vercel only sends a token if `CRON_SECRET` is set; without it the route still runs, because it does nothing before 10:00, runs once a day (ledger), alerts once a day (dedupe) and anonymous callers get only the status. Setting `CRON_SECRET` in Vercel locks it down. |
 
 ---
 
@@ -256,6 +257,7 @@ All tables: UUID PK, `household_id` (indexed, RLS-scoped), `created_at`/`updated
 - `backup-nightly`: `pg_dump` + storage object list → encrypted with `age` → GitHub artifact (90 days). A **monthly restore test** into a throwaway Postgres container in GitHub Actions proves the backup is usable.
 - Settings → Data: export everything (JSON + CSV + original files zip) and delete account/household.
 - Settings → Jobs: last run per job, failures and source status.
+- `watchdog` (Vercel Cron, D28): alerts if today's daily jobs didn't run at all.
 
 ---
 

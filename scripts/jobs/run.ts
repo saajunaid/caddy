@@ -1,6 +1,7 @@
 // Runs scheduled jobs. Used by GitHub Actions; also works locally.
 //   node --experimental-strip-types scripts/jobs/run.ts daily            # every daily job
 //   node --experimental-strip-types scripts/jobs/run.ts digest           # the morning summary push
+//   node --experimental-strip-types scripts/jobs/run.ts watchdog         # missed-run check (Vercel runs it)
 //   node --experimental-strip-types scripts/jobs/run.ts job housing-daily  # one job
 // Env: SUPABASE_URL, SUPABASE_SECRET_KEY, optional APP_URL (to send push notifications after).
 import { createClient } from "@supabase/supabase-js";
