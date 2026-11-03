@@ -13,6 +13,8 @@ export type Digest = {
   title: string;
   body: string;
   severity: "info" | "warning";
+  /** Nothing needs you and every check ran: push only, no email. */
+  quiet: boolean;
 };
 
 const MAX_BODY = 230;
@@ -49,5 +51,6 @@ export function buildDigest(input: DigestInput): Digest {
     title,
     body,
     severity: input.failedChecks.length > 0 ? "warning" : "info",
+    quiet: count === 0 && input.failedChecks.length === 0,
   };
 }

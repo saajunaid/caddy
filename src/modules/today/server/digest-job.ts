@@ -211,7 +211,8 @@ export const dailyDigestJob: JobDefinition = {
         sent += await notify(admin, [
           {
             householdId,
-            kind: "digest",
+            // Quiet days are push + Inbox only; "digest" is also emailed (EMAIL_KINDS).
+            kind: digest.quiet ? "digest.quiet" : "digest",
             severity: digest.severity,
             title: digest.title,
             body: digest.body,

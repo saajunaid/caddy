@@ -102,6 +102,11 @@ describe("notifications", () => {
       db.query("update public.notifications set title = 'hacked'"),
     );
     expect(rewrite).toMatch(/permission denied/);
+    // Only the app's email sender marks alerts as emailed.
+    const emailed = await errorAs(db, f.userA, () =>
+      db.query("update public.notifications set emailed_at = now()"),
+    );
+    expect(emailed).toMatch(/permission denied/);
   });
 
   it("can't be created by signed-in users", async () => {

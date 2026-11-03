@@ -16,6 +16,7 @@ describe("buildDigest", () => {
       title: "All quiet today",
       body: "Cost Rental: 204 listings checked · 0 match · 0 new",
       severity: "info",
+      quiet: true,
     });
     expect(
       buildDigest({ items: [], failedChecks: [], housingSummary: null }).body,
@@ -38,6 +39,7 @@ describe("buildDigest", () => {
       housingSummary: null,
     });
     expect(digest.title).toBe("4 things need you today");
+    expect(digest.quiet).toBe(false);
     expect(digest.body).toBe(
       "Overdue: Late · Overdue: Also late · Due today: Today · +1 more",
     );
@@ -50,6 +52,7 @@ describe("buildDigest", () => {
       housingSummary: null,
     });
     expect(digest.severity).toBe("warning");
+    expect(digest.quiet).toBe(false);
     expect(digest.title).toBe("1 thing needs you today");
     expect(digest.body.startsWith("Check failed: Cost Rental check")).toBe(
       true,
